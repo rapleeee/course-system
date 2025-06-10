@@ -111,30 +111,37 @@ export default function Navbar() {
   }
 
   return (
-    <div className="relative">
+     <div className="relative">
       <div className="p-2 shadow-sm">
         <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mx-4">
-            <button 
-              onClick={() => setIsOpen(!isOpen)}
-              className="flex items-center gap-2 p-2 rounded-lg cursor-pointer"
-            >
-              {isOpen ? <X size={24} /> : <AlignLeft size={24} />}
-            <span className="text-lg">
-              {isOpen ? 'Tutup' : 'Menu'}
-            </span>
-            </button>
-            <GraduationCap size={54}/>
-            <div className="flex items-center gap-2">
-              <div className="hidden sm:block text-lg">Hubungi Kami</div>
-              <Phone size={24} className="" />
-              <ModeToggle/>
+          <div className="flex justify-between items-center mx-4 relative">
+            <div className="absolute left-0 z-10">
+              <button 
+                onClick={() => setIsOpen(!isOpen)}
+                className="flex items-center gap-2 p-2 rounded-lg cursor-pointer "
+              >
+                {isOpen ? <X size={24} /> : <AlignLeft size={24} />}
+                <span className="text-lg">
+                  {isOpen ? 'Tutup' : 'Menu'}
+                </span>
+              </button>
+            </div>
+
+            <div className="flex-1 flex justify-center">
+              <GraduationCap size={54}/>
+            </div>
+
+            <div className="absolute right-0 z-10">
+              <div className="flex items-center gap-2 cursor-pointer">
+                <div className="hidden sm:block text-lg">Hubungi Kami</div>
+                <Phone size={24} />
+                <ModeToggle/>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Mobile menu */}
       <div className="md:hidden">
         {mobileMenu}
         {isOpen && (
@@ -145,7 +152,6 @@ export default function Navbar() {
         )}
       </div>
 
-      {/* Desktop menu */}
       <div className="hidden md:block">
         {desktopMenu}
       </div>
