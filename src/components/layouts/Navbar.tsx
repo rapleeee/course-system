@@ -111,7 +111,7 @@ export default function Navbar() {
   }
 
   return (
-     <div className="relative">
+     <div className="relative z-50">
       <div className="p-2 shadow-sm">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mx-4 relative">

@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 
 export default function HeroSection() {
   return (
-    <section className="relative overflow-hidden">
+    <section className="relative overflow-hidden ">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center min-h-[calc(100vh-80px)] justify-center py-12 sm:py-16">
           <motion.div 
@@ -26,7 +26,6 @@ export default function HeroSection() {
             </h1>
           </motion.div>
 
-          {/* Description */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -40,7 +39,6 @@ export default function HeroSection() {
             </p>
           </motion.div>
 
-          {/* CTA Buttons */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
