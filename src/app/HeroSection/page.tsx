@@ -16,7 +16,7 @@ export default function HeroSection() {
             className="space-y-4 text-center"
           >
             <h1 className="font-bold text-3xl sm:text-4xl md:text-5xl bg-clip-text">
-              #AmbilLangkahPertama
+              #LulusBeneran
             </h1>
             <h1 className="font-bold text-3xl sm:text-4xl md:text-5xl bg-clip-text">
               #KenalDuniaKampus
@@ -33,9 +33,8 @@ export default function HeroSection() {
             className="mt-8 max-w-3xl"
           >
             <p className="text-center text-lg sm:text-xl text-gray-600 dark:text-gray-300">
-              Kampus Tutor adalah platform pembelajaran online yang menyediakan berbagai 
-              program pendidikan berkualitas tinggi untuk meningkatkan keterampilan dan 
-              pengetahuan Anda.
+              Kampus Tutor adalah platform bagi siswa, mahasiswa hingga masyarakat umum untuk belajar.
+              Program utama kami adalah <span className="font-bold bg-[#f5bb64] rounded-lg px-2  text-[#1d857c]">Kelas Kato</span>, yaitu pembukaan kelas mata kuliah dari beragam jurusan kuliah yang ada di Indonesia.
             </p>
           </motion.div>
 
@@ -45,32 +44,14 @@ export default function HeroSection() {
             transition={{ duration: 0.5, delay: 0.4 }}
             className="mt-10 flex flex-col sm:flex-row gap-4"
           >
-            <Button size="lg" className="bg-[#35bdbd] hover:bg-[#2a9b9b] text-white">
+            <Button size="lg" className="bg-[#35bdbd] hover:bg-[#2a9b9b] text-white cursor-pointer">
               Mulai Belajar
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
-            <Button size="lg" variant="outline">
+            <Button size="lg" variant="outline" className='cursor-pointer'>
               Lihat Program
             </Button>
           </motion.div>
-
-          {/* <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            className="mt-16 grid grid-cols-2 gap-8 sm:grid-cols-3 sm:gap-12"
-          >
-            {[
-              { number: '1000+', label: 'Siswa Aktif' },
-              { number: '50+', label: 'Mentor Berpengalaman' },
-              { number: '100+', label: 'Program Tersedia' },
-            ].map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-3xl font-bold text-purple-600">{stat.number}</div>
-                <div className="mt-1 text-gray-500 dark:text-gray-400">{stat.label}</div>
-              </div>
-            ))}
-          </motion.div> */}
         </div>
       </div>
     </section>
