@@ -33,8 +33,8 @@ export default function HeroSection() {
             className="mt-8 max-w-3xl"
           >
             <p className="text-center text-lg sm:text-xl text-gray-600 dark:text-gray-300">
-              Kampus Tutor adalah platform bagi siswa, mahasiswa hingga masyarakat umum untuk belajar.
-              Program utama kami adalah <span className="font-bold bg-[#f5bb64] rounded-lg px-2  text-[#1d857c]">Kelas Kato</span>, yaitu pembukaan kelas mata kuliah dari beragam jurusan kuliah yang ada di Indonesia.
+              Mentora adalah platform bagi mahasiswa untuk belajar mempersiapkan skripsinya dengan bimbingan dari mentor.
+              Program utama kami adalah <span className="font-bold bg-[#f5bb64] rounded-lg px-2  text-[#1d857c]">Kelas KaTo</span>, yaitu mentoring skripsi untuk mahasiswa sampai lulus.  
             </p>
           </motion.div>
 

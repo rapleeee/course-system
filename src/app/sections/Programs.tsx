@@ -1,0 +1,116 @@
+"use client"
+import { motion } from "framer-motion"
+import { ArrowRight, BookOpen, Users, Clock, Check } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+
+export default function ProgramSection() {
+  const programs = [
+    {
+      title: "Kelas TaKu",
+      subtitle: "Tapak Kuliah",
+      description: "Program persiapan kuliah intensif dengan bimbingan mentor berpengalaman",
+      features: [
+        "12 sesi pembelajaran online",
+        "Konsultasi jurusan 1-on-1",
+        "Akses materi seumur hidup",
+        "Sertifikat kelulusan"
+      ],
+      icon: <BookOpen className="w-8 h-8 text-[#35bdbd]" />,
+      popular: true
+    },
+    {
+      title: "Bimbingan Intensif",
+      subtitle: "UTBK Master",
+      description: "Persiapan UTBK dan ujian masuk perguruan tinggi",
+      features: [
+        "Try out berkala",
+        "Pembahasan soal lengkap",
+        "Konsultasi pribadi",
+        "Prediksi soal ujian"
+      ],
+      icon: <Users className="w-8 h-8 text-neutral-600 dark:text-neutral-300" />
+    },
+    {
+      title: "Webinar Jurusan",
+      subtitle: "Career Path",
+      description: "Mengenal lebih dalam tentang jurusan impian",
+      features: [
+        "Sharing alumni sukses",
+        "Tips memilih jurusan",
+        "Prospek karir",
+        "Networking session"
+      ],
+      icon: <Clock className="w-8 h-8 text-neutral-600 dark:text-neutral-300" />
+    }
+  ]
+
+  return (
+    <section className="py-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-4xl font-bold mb-4">
+            Eksplor Program Unggulan Kami
+          </h2>
+          <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto text-lg">
+            Pilih program yang sesuai dengan kebutuhan dan target kampus impianmu
+          </p>
+        </motion.div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {programs.map((program, index) => (
+            <motion.div
+              key={program.title}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className={cn(
+                "relative bg-white dark:bg-neutral-800 rounded-xl shadow-md border border-gray-200 dark:border-neutral-700 ",
+                program.popular && "ring-2 ring-[#35bdbd]"
+              )}
+            >
+              {program.popular && (
+                <div className="absolute top-4 right-4">
+                  <span className="px-3 py-1 text-xs font-semibold text-white bg-[#35bdbd] rounded-full">
+                    Popular
+                  </span>
+                </div>
+              )}
+              <div className="p-8 border-b dark:border-neutral-700">
+                <div className="w-16 h-16 bg-gray-50 dark:bg-neutral-700 rounded-xl flex items-center justify-center mb-4">
+                  {program.icon}
+                </div>
+                <h3 className="text-2xl font-bold mb-1">{program.title}</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">{program.subtitle}</p>
+              </div>
+              <div className="p-8">
+                <p className="text-gray-600 dark:text-gray-300 mb-6 text-sm">
+                  {program.description}
+                </p>
+                <ul className="space-y-4 mb-8">
+                  {program.features.map((feature, i) => (
+                    <li key={i} className="flex items-center gap-3 text-sm">
+                      <Check className="w-4 h-4 text-[#35bdbd]" />
+                      <span className="text-gray-600 dark:text-gray-300">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Button 
+                  className="w-full bg-[#35bdbd] hover:bg-[#35bdbd]/90 cursor-pointer"
+                >
+                  Daftar Sekarang
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}

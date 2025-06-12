@@ -112,7 +112,7 @@ export default function Navbar() {
 
   return (
      <div className="relative z-50">
-      <div className="p-2 shadow-sm">
+      <div className="p-3 shadow-sm">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mx-4 relative">
             <div className="absolute left-0 z-10">
@@ -129,6 +129,7 @@ export default function Navbar() {
 
             <div className="flex-1 flex justify-center">
               <GraduationCap size={54}/>
+              {/* <h1 className="font-bold text-3xl sm:text-4xl md:text-5xl bg-clip-text">Mentora<span className="text-red-800">.</span></h1> */}
             </div>
 
             <div className="absolute right-0 z-10">

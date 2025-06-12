@@ -13,7 +13,68 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+
+
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://kato.id"),
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  keywords: [
+    "KaTo",
+    "Kampus Tutor",
+    "Kampus",
+    "Tutor",        
+    "Pendidikan",    
+    "Belajar",
+    "Mentor",
+    "Online Learning",
+    "UTBK",
+    "Persiapan Kuliah",
+    "Bimbingan",
+    "Kelas Online",
+    "Kelas Persiapan",
+    "Kelas UTBK",
+    "Kelas Online",
+    "Kelas Persiapan Kuliah",
+    "Kelas UTBK Online",
+    "Kelas Online UTBK",
+    "Kelas Online Persiapan Kuliah",
+    "Kelas Online UTBK",
+    "Kelas Online Persiapan UTBK",
+    "Kelas Online Bimbingan",
+    "Kelas Online Mentor",
+    "Kelas Online Pendidikan",
+    "Kelas Online Belajar",
+    "Kelas Online Kampus",
+    "Kelas Online Tutor",
+    "Kelas Online KaTo",
+    "Kelas Online Kampus Tutor",
+    "Kelas Online KaTo - Kampus Tutor",
+  ],
+  authors: [
+    {
+      name: "KaTo Team",
+      url: "https://kato.id",
+    },
+  ],
+  creator: "KaTo Team",
+  publisher: "KaTo Team",
+  applicationName: "KaTo - Kampus Tutor",
+  formatDetection: {
+    telephone: false,
+    address: false,
+    email: false,
+  },
   title: "KaTo - Kampus Tutor",
   description: "Kampus Tutor adalah platform pembelajaran online yang menyediakan berbagai program pendidikan berkualitas tinggi untuk meningkatkan keterampilan dan pengetahuan Anda.",
   openGraph: {
