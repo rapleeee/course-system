@@ -17,7 +17,7 @@ export default function Navbar() {
       name: 'Beranda', 
       href: '/', 
       icon: <Home className="w-6 h-6" />,
-      description: 'Selamat datang di KaTo'
+      description: 'Selamat datang di Mentora'
     },
     { 
       name: 'Daftar Program', 

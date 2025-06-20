@@ -3,43 +3,47 @@ import { motion } from "framer-motion"
 import { ArrowRight, BookOpen, Users, Clock, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { p } from "framer-motion/client"
 
 export default function ProgramSection() {
   const programs = [
     {
-      title: "Kelas TaKu",
-      subtitle: "Tapak Kuliah",
-      description: "Program persiapan kuliah intensif dengan bimbingan mentor berpengalaman",
+      title: "Kelas TaCo",
+      subtitle: "Tapak Coding",
+      description: "Program kelas gratis untuk mengenal dunia coding dengan bimbingan mentor tiap minggu",
       features: [
-        "12 sesi pembelajaran online",
-        "Konsultasi jurusan 1-on-1",
+        "1 sesi pembelajaran online",
+        "1 sesi mentoring per minggu",
         "Akses materi seumur hidup",
-        "Sertifikat kelulusan"
+        "Komunitas aktif",
+        "Portfolio proyek"
       ],
       icon: <BookOpen className="w-8 h-8 text-[#35bdbd]" />,
+    },
+    {
+      title: "Kelas TaCo Pro",
+      subtitle: "Taco Plus+",
+      description: "Program kelas intensif untuk mempersiapkan karir di bidang teknologi",
+      features: [
+        "Pembelajaran mendalam",
+        "Proyek nyata",
+        "Sesi mentoring intensif",
+        "Akses ke jaringan profesional",
+        "Sertifikat kelulusan"
+      ],
+      icon: <Users className="w-8 h-8 text-neutral-600 dark:text-neutral-300" />,
       popular: true
     },
     {
-      title: "Bimbingan Intensif",
-      subtitle: "UTBK Master",
-      description: "Persiapan UTBK dan ujian masuk perguruan tinggi",
-      features: [
-        "Try out berkala",
-        "Pembahasan soal lengkap",
-        "Konsultasi pribadi",
-        "Prediksi soal ujian"
-      ],
-      icon: <Users className="w-8 h-8 text-neutral-600 dark:text-neutral-300" />
-    },
-    {
-      title: "Webinar Jurusan",
+      title: "Kelas TaCo Career",
       subtitle: "Career Path",
-      description: "Mengenal lebih dalam tentang jurusan impian",
+      description: "Program persiapan karir untuk lulusan yang ingin memasuki dunia kerja",
       features: [
-        "Sharing alumni sukses",
-        "Tips memilih jurusan",
-        "Prospek karir",
-        "Networking session"
+        "Persiapan wawancara kerja",
+        "Pengembangan soft skills",
+        "Jaringan profesional",
+        "Sesi coaching karir",
+        "Dukungan pasca-kelas",
       ],
       icon: <Clock className="w-8 h-8 text-neutral-600 dark:text-neutral-300" />
     }

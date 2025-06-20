@@ -18,7 +18,7 @@ export default function CTASection() {
               Siap Untuk Memulai Perjalananmu?
             </h2>
             <p className="text-white/90 text-lg leading-relaxed">
-              Bergabung dengan ribuan siswa lainnya dan mulai persiapkan masa depanmu bersama KaTo. 
+              Bergabung dengan siswa lainnya dan mulai persiapkan masa depanmu bersama Mentora. 
               Dapatkan bimbingan terbaik dari mentor berpengalaman dan akses ke materi pembelajaran berkualitas.
             </p>
           </motion.div>
@@ -47,7 +47,6 @@ export default function CTASection() {
           </motion.div>
         </div>
 
-        {/* Additional Features */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -55,10 +54,6 @@ export default function CTASection() {
           className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16"
         >
           {[
-            {
-              text: "Garansi Uang Kembali 30 Hari",
-              icon: <ArrowRight className="w-5 h-5" />
-            },
             {
               text: "Akses Seumur Hidup",
               icon: <Clock className="w-5 h-5" />

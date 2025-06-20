@@ -20,9 +20,9 @@ export default function FeaturesSection() {
       title: "Mentor Berpengalaman",
       description: "Dibimbing oleh mentor yang ahli di bidangnya",
       benefits: [
-        "Alumni PTN ternama",
+        "Pendekatan gamifikasi",
         "Pengalaman 5+ tahun",
-        "Tersertifikasi"
+        "Tervalidasi industri"
       ]
     },
     {
@@ -37,11 +37,11 @@ export default function FeaturesSection() {
     },
     {
       icon: <Award className="w-12 h-12 text-[#35bdbd]" />,
-      title: "Sertifikat Kelulusan",
-      description: "Dapatkan sertifikat setelah menyelesaikan program",
+      title: "Memiliki Portfolio",
+      description: "Mendapatkan portfolio yang dapat digunakan untuk melamar kerja",
       benefits: [
         "Diakui industri",
-        "Portfolio mahasiswa",
+        "Portfolio profesional",
         "Pencapaian terukur"
       ]
     }
@@ -50,9 +50,9 @@ export default function FeaturesSection() {
   const companies = [
     { name: "Gojek", logo: "/logos/gojek.png" },
     { name: "Tokopedia", logo: "/logos/tokopedia.png" },
-    { name: "Traveloka", logo: "/logos/traveloka.png" },
+    { name: "Traveloka", logo: "/logos/traveloka.webp" },
     { name: "Bukalapak", logo: "/logos/bukalapak.png" },
-    { name: "Shopee", logo: "/logos/shopee.png" },
+    { name: "Shopee", logo: "/logos/shopee.webp" },
     { name: "Dana", logo: "/logos/dana.png" },
     { name: "BCA", logo: "/logos/bca.png" },
     { name: "Mandiri", logo: "/logos/mandiri.png" },
@@ -105,7 +105,7 @@ export default function FeaturesSection() {
           className="text-center mb-12"
         >
           <h3 className="text-2xl font-bold mb-4">
-            We are Proud to Help Thousands of Our Students Land Jobs at Top Companies
+            Alumni Kami Bekerja di Perusahaan Terkemuka
           </h3>
           <p className="text-gray-600 dark:text-gray-300">
             Alumni kami bekerja di perusahaan terkemuka

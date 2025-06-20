@@ -5,25 +5,25 @@ import Image from "next/image"
 export default function TestimonialsSection() {
   const testimonials = [
     {
-      name: "Aldi Ramdani",
-      role: "Mahasiswa UI",
+      name: "Ichtiar Tegar",
+      role: "Mahasiswa Urindo",
       image: "/testimonials/aldi.jpg",
-      content: "Berkat KaTo, saya bisa lebih memahami jurusan yang saya pilih dan akhirnya diterima di universitas impian.",
-      university: "Fakultas Teknik"
+      content: "Kelas TaCo sangat membantu saya memahami coding dengan cara yang menyenangkan. Mentor-mentornya sangat berpengalaman dan selalu siap membantu.",
+      university: "Fakultas Teknologi Informasi"
     },
     {
-      name: "Sarah Amalia",
-      role: "Mahasiswa ITB",
+      name: "Rafli Maulana",
+      role: "Mahasiswa Urindo",
       image: "/testimonials/sarah.jpg",
-      content: "Mentor-mentornya sangat membantu dalam mempersiapkan ujian masuk. Materinya lengkap dan mudah dipahami.",
-      university: "Fakultas FMIPA"
+      content: "Kelas TaCo Pro memberikan saya pengetahuan yang mendalam tentang teknologi terbaru. Saya merasa siap untuk memasuki dunia kerja.",
+      university: "Fakultas Teknik Informasi"
     },
     {
-      name: "Reza Pratama",
-      role: "Mahasiswa UGM",
+      name: "Erian Sukarna Putera",
+      role: "Mahasiswa Unbin",
       image: "/testimonials/reza.jpg",
-      content: "Program persiapan kuliah yang sangat membantu. Saya jadi lebih percaya diri menghadapi perkuliahan.",
-      university: "Fakultas Kedokteran"
+      content: "Kelas TaCo sangat interaktif dan menyenangkan. Saya belajar banyak hal baru yang tidak saya dapatkan di kampus.",
+      university: "Fakultas Sistem Informasi"
     }
   ]
 
