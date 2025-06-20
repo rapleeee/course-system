@@ -1,10 +1,12 @@
 "use client"
-import React from 'react'
+import React, { useEffect } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
+import Link from 'next/link' 
 
 export default function HeroSection() {
+
   return (
     <section className="relative overflow-hidden ">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -16,13 +18,13 @@ export default function HeroSection() {
             className="space-y-4 text-center"
           >
             <h1 className="font-bold text-3xl sm:text-4xl md:text-5xl bg-clip-text">
-              #LulusBeneran
+              #JagoBeneran
             </h1>
             <h1 className="font-bold text-3xl sm:text-4xl md:text-5xl bg-clip-text">
-              #KenalDuniaKampus
+              #KenalDuniaKerja
             </h1>
             <h1 className="font-bold text-3xl sm:text-4xl md:text-5xl bg-clip-text">
-              #MahasiswaNextLevel
+              #ProgrammerNextLevel
             </h1>
           </motion.div>
 
@@ -33,8 +35,8 @@ export default function HeroSection() {
             className="mt-8 max-w-3xl"
           >
             <p className="text-center text-lg sm:text-xl text-gray-600 dark:text-gray-300">
-              Mentora adalah platform bagi mahasiswa untuk belajar mempersiapkan skripsinya dengan bimbingan dari mentor.
-              Program utama kami adalah <span className="font-bold bg-[#f5bb64] rounded-lg px-2  text-[#1d857c]">Kelas KaTo</span>, yaitu mentoring skripsi untuk mahasiswa sampai lulus.  
+              Mentora adalah platform belajar coding menyenangkan dan mudah 
+              dengan sistem modular dan gamifikasi. Program utama kami adalah<span className="font-bold bg-[#f5bb64] rounded-lg px-2  text-[#1d857c]">Kelas TaCo</span>, bakalan ngebimbing kamu dari baris code pertama sampai jadi programmer yang siap kerja. 
             </p>
           </motion.div>
 
@@ -44,10 +46,15 @@ export default function HeroSection() {
             transition={{ duration: 0.5, delay: 0.4 }}
             className="mt-10 flex flex-col sm:flex-row gap-4"
           >
-            <Button size="lg" className="bg-[#35bdbd] hover:bg-[#2a9b9b] text-white cursor-pointer">
-              Mulai Belajar
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
+            <Link href="/auth/login">
+              <Button 
+                size="lg" 
+                className="bg-[#35bdbd] hover:bg-[#2a9b9b] text-white cursor-pointer"
+              >
+                Mulai Belajar
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
             <Button size="lg" variant="outline" className='cursor-pointer'>
               Lihat Program
             </Button>

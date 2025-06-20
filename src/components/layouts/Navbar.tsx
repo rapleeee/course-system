@@ -128,8 +128,7 @@ export default function Navbar() {
             </div>
 
             <div className="flex-1 flex justify-center">
-              <GraduationCap size={54}/>
-              {/* <h1 className="font-bold text-3xl sm:text-4xl md:text-5xl bg-clip-text">Mentora<span className="text-red-800">.</span></h1> */}
+              <h1 className="font-bold text-xl sm:text-3xl md:text-3xl bg-clip-text">Mentora<span className="text-red-800">.</span></h1>
             </div>
 
             <div className="absolute right-0 z-10">
