@@ -45,12 +45,15 @@ export default function LoginPage() {
       setTimeout(() => {
         window.location.href = '/pages/dashboard'
       }, 2000)
-    } catch (err: string | any) {
-      setLoading(false)
-      setError('Hayoo! Login gagal, coba lagi. cek email dan password kamu')
-      toast.error('Login failed: ' + err.message, {
+    } catch (err: unknown) {
+      if(err instanceof Error) {
+        setLoading(false)
+        setError('Hayoo! Login gagal, coba lagi. cek email dan password kamu')
+        toast.error('Login failed: ' + err.message, {
         duration: 5000,
       })
+      }
+      
     }
   }
 
