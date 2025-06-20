@@ -21,25 +21,25 @@ export default function Navbar() {
     },
     { 
       name: 'Daftar Program', 
-      href: '/program', 
+      href: '#program', 
       icon: <BookOpen className="w-6 h-6" />,
       description: 'Jelajahi program pembelajaran'
     },
     { 
       name: 'Kantor dan Sekolah', 
-      href: '/location', 
+      href: '/navbars/location', 
       icon: <Building2 className="w-6 h-6" />,
       description: 'Lokasi kami'
     },
     { 
       name: 'Tentang Kami', 
-      href: '/about', 
+      href: '/navbars/about', 
       icon: <Users className="w-6 h-6" />,
       description: 'Kenali kami lebih dekat'
     },
     { 
       name: 'Karir', 
-      href: '/career', 
+      href: '/navbars/career', 
       icon: <Briefcase className="w-6 h-6" />,
       description: 'Bergabung dengan tim kami'
     },

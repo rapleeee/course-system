@@ -3,7 +3,7 @@ import React from 'react'
 import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
-import Link from 'next/link' 
+import Link from 'next/link'
 
 export default function HeroSection() {
 
@@ -55,9 +55,11 @@ export default function HeroSection() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className='cursor-pointer'>
-              Lihat Program
-            </Button>
+            <Link href="#program">
+              <Button size="lg" variant="outline" className='cursor-pointer'>
+                Lihat Program
+              </Button>
+            </Link>
           </motion.div>
         </div>
       </div>

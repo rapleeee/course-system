@@ -12,6 +12,10 @@
   }
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 .animate-scroll {
   animation: scroll 30s linear infinite;
 }
