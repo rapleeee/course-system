@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Ignore .env.local (biasanya untuk menyimpan API keys)
+.env.local
+
+# Ignore other local env files
+.env.development
+.env.production
+.env.test
+
+# Ignore Firebase config if you use it locally
+firebase-config.js
