@@ -1,5 +1,5 @@
 "use client"
-import { AlignLeft, GraduationCap, Phone, X, Home, BookOpen, Building2, Users, Briefcase } from 'lucide-react'
+import { AlignLeft, Phone, X, Home, BookOpen, Building2, Users, Briefcase } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { ModeToggle } from '../ui/ModeToogle'
 import Link from 'next/link'

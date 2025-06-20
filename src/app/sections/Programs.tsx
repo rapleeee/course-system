@@ -3,7 +3,6 @@ import { motion } from "framer-motion"
 import { ArrowRight, BookOpen, Users, Clock, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { p } from "framer-motion/client"
 
 export default function ProgramSection() {
   const programs = [
