@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Navbar from "@/components/layouts/Navbar";
 import { ArrowRightCircleIcon, ChevronDown, ChevronUp } from "lucide-react";
+import Image from "next/image";
 
 export default function Recruitment() {
   const jobs = [
@@ -73,10 +74,12 @@ const [openIndex, setOpenIndex] = useState<number | null>(null);
             Lets level up together and join us during our next recruitment.
           </p>
           <div>
-            <img
-              src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80"
-              alt="recruitment"
-              className="w-full h-100 rounded-xl grayscale-75 my-10 object-cover"
+            <Image
+              src="/photos/recruitment.webp"
+              alt="Recruitment Image"
+              width={600}
+              height={400}
+              className="rounded-lg shadow-md w-full h-100 object-cover mt-6"
             />
           </div>
         </div>
