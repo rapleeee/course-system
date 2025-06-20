@@ -45,7 +45,7 @@ export default function LoginPage() {
       setTimeout(() => {
         window.location.href = '/pages/dashboard'
       }, 2000)
-    } catch (err: any) {
+    } catch (err: string | any) {
       setLoading(false)
       setError('Hayoo! Login gagal, coba lagi. cek email dan password kamu')
       toast.error('Login failed: ' + err.message, {
@@ -61,12 +61,14 @@ export default function LoginPage() {
         duration: 5000,
       })
       window.location.href = '/dashboard'
-    } catch (err) {
-      setError('Something went wrong with Google login')
-      toast.error('Something went wrong with Google login', {
-        duration: 5000,
-      })
-    }
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+          setError('Login failed: ' + err.message)
+          toast.error('Login failed: ' + err.message, { duration: 5000 })
+        } else {
+          setError('An unknown error occurred')
+        }
+      }
   }
 
   return (
@@ -123,8 +125,8 @@ export default function LoginPage() {
       </div>
       <div className="flex-1 bg-[#2a9b9b] p-8 rounded-lg text-white flex justify-center items-center">
         <div className=" max-w-lg">
-          <p className="text-2xl font-semibold mb-4">" {quote} "</p>
-          <p className="text-lg">- {author}</p>
+          <p className="text-2xl font-semibold mb-4">"{quote}"</p> 
+          <p className="text-lg">-{author}</p>
         </div>
       </div>
     </section>
