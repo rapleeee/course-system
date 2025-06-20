@@ -73,7 +73,7 @@ export default function AboutPage() {
               >
                 <Quote size={24} className="text-[#f5bb64]" />
                 <span className="text-lg font-semibold text-neutral-400">
-                  "Our work does make sense only if it is a faithful witness of his time." - Jean-Philippe Nuel, Director
+                  “Our work does make sense only if it is a faithful witness of his time.” - Jean-Philippe Nuel, Director
                 </span>
               </motion.div>
             </motion.div>
