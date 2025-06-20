@@ -54,12 +54,11 @@ export default function Recruitment() {
       linkwebsite: "https://docs.google.com/forms/d/e/1FAIpQLSeCLzS4bjdkwaUzbgPNA-T-IrahM_AvJRCokIexeXCPKak3GA/viewform"
     },
   ];
+const [openIndex, setOpenIndex] = useState<number | null>(null);
 
-  const [openIndex, setOpenIndex] = useState(null);
-
-  const toggleAccordion = (index: any) => {
-    setOpenIndex(openIndex === index ? null : index);
-  };
+  const toggleAccordion = (index: number) => {
+  setOpenIndex(openIndex === index ? null : index);
+};
 
   return (
     <>
@@ -71,7 +70,7 @@ export default function Recruitment() {
             COLLABORATING WITH TALENTED INDIVIDUALS.
           </h1>
           <p className="text-neutral-400 text-lg sm:text-2xl mt-6">
-            Let's level up together and join us during our next recruitment.
+            Lets level up together and join us during our next recruitment.
           </p>
           <div>
             <img
