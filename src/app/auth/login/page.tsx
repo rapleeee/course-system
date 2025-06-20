@@ -128,7 +128,7 @@ export default function LoginPage() {
       </div>
       <div className="flex-1 bg-[#2a9b9b] p-8 rounded-lg text-white flex justify-center items-center">
         <div className=" max-w-lg">
-          <p className="text-2xl font-semibold mb-4">"{quote}"</p> 
+          <p className="text-2xl font-semibold mb-4">~{quote}~</p> 
           <p className="text-lg">-{author}</p>
         </div>
       </div>
