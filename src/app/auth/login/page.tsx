@@ -7,6 +7,7 @@ import { auth, googleProvider } from '@/lib/firebase'
 import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth'
 import axios from 'axios'
 import { toast } from 'sonner'
+import { setCookie } from 'cookies-next'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -30,28 +31,34 @@ export default function LoginPage() {
     fetchQuote()
   }, [])
 
-  const handleEmailLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setLoading(true)
+const handleEmailLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault()
+  setLoading(true)
 
-    try {
-      await signInWithEmailAndPassword(auth, email, password)
-      toast.success('Login successful!')
-      setTimeout(() => {
-        window.location.href = '/pages/dashboard' 
-      }, 1500)
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        toast.error('Login failed: ' + err.message)
-        setError(err.message)
-      } else {
-        toast.error('Unknown error occurred.')
-        setError('Unknown error')
-      }
-    } finally {
-      setLoading(false)
+  try {
+    await signInWithEmailAndPassword(auth, email, password)
+    const token = await auth.currentUser?.getIdToken()
+    if (token) {
+      setCookie('token', token)
     }
+
+    toast.success('Login successful!')
+    setTimeout(() => {
+      const isAdmin = auth.currentUser?.email === 'admin@gmail.com'
+      window.location.href = isAdmin ? '/admin/dashboard' : '/pages/dashboard'
+    }, 1500)
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      toast.error('Login failed: ' + err.message)
+      setError(err.message)
+    } else {
+      toast.error('Unknown error occurred.')
+      setError('Unknown error')
+    }
+  } finally {
+    setLoading(false)
   }
+}
 
   const handleGoogleLogin = async () => {
     try {
