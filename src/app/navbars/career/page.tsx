@@ -75,7 +75,7 @@ const [openIndex, setOpenIndex] = useState<number | null>(null);
           </p>
           <div>
             <Image
-              src="/photos/recruitment.webp"
+              src="/photos/progammer.webp"
               alt="Recruitment Image"
               width={600}
               height={400}

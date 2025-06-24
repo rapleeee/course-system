@@ -1,5 +1,4 @@
 "use client"
-
 import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { ArrowRight, Eye, EyeOff } from 'lucide-react'
@@ -39,7 +38,7 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, email, password)
       toast.success('Login successful!')
       setTimeout(() => {
-        window.location.href = '/pages/dashboard'
+        window.location.href = '/pages/dashboard' 
       }, 1500)
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -58,7 +57,7 @@ export default function LoginPage() {
     try {
       await signInWithPopup(auth, googleProvider)
       toast.success('Login successful!')
-      window.location.href = '/pages/dashboard'
+      window.location.href = '/pages/dashboard' 
     } catch (err: unknown) {
       if (err instanceof Error) {
         toast.error('Google login failed: ' + err.message)
@@ -123,7 +122,7 @@ export default function LoginPage() {
       </div>
 
       <div className="w-full md:w-1/2 mt-10 md:mt-0 bg-[#2a9b9b] p-8 rounded-lg text-white flex justify-center items-center min-h-[300px]">
-        <div className="text-center max-w-lg">
+        <div className="max-w-lg">
           <p className="text-2xl font-semibold mb-4">“{quote}”</p>
           <p className="text-lg">— {author}</p>
         </div>
