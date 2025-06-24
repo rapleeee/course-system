@@ -1,9 +1,10 @@
-"use client"
-import { Calendar, Home, Inbox, Search, Settings, LogOut } from "lucide-react"
-import { signOut } from 'firebase/auth'
-import { auth } from '@/lib/firebase'
-import Link from 'next/link'
+"use client";
 
+import { Calendar, Home, LogOut, ClipboardList, Medal } from "lucide-react";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import Link from "next/link";
+import { useSidebar } from "@/components/ui/sidebar";
 import {
   Sidebar,
   SidebarContent,
@@ -13,81 +14,115 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 
-// Menu items.
 const items = [
   {
-    title: "Home",
+    title: "Dashboard",
     url: "/pages/dashboard",
     icon: Home,
   },
   {
-    title: "Inbox",
-    url: "#",
-    icon: Inbox,
+    title: "Kelas",
+    url: "/pages/courses",
+    icon: ClipboardList,
   },
   {
-    title: "Calendar",
-    url: "#",
+    title: "Event Komunitas",
+    url: "/pages/event",
     icon: Calendar,
   },
   {
-    title: "Search",
-    url: "#",
-    icon: Search,
-  },
-  {
-    title: "Settings",
-    url: "/pages/settings",
-    icon: Settings,
+    title: "Leaderboard",
+    url: "/pages/leaderboard",
+    icon: Medal,
   },
   {
     title: "Logout",
-    url: "/auth/login",  // Redirect to login directly using Link
+    url: "/auth/login",
     icon: LogOut,
-    action: "logout", // Action for logout
+    action: "logout",
   },
-]
+];
 
 export function AppSidebar() {
-  // Function to handle logout
+  const { collapsed } = useSidebar();
+
   const handleLogout = async () => {
     try {
-      await signOut(auth)  // Firebase signOut function
+      await signOut(auth);
     } catch (err) {
-      console.error('Error logging out:', err)
+      console.error("Logout failed", err);
     }
-  }
+  };
 
   return (
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Application</SidebarGroupLabel>
+          <SidebarGroupLabel>Menu Utama</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
+              {items.map((item) => {
+                const content = (
                   <SidebarMenuButton asChild>
                     {item.action === "logout" ? (
-                      <Link href={item.url} onClick={handleLogout} className="flex items-center gap-3 w-full">
-                        <item.icon />
-                        <span>{item.title}</span>
+                      <Link
+                        href={item.url}
+                        onClick={handleLogout}
+                        className="flex items-center w-full"
+                      >
+                        <item.icon className="shrink-0"/>
+                        <span
+                          className={`ml-3 truncate text-base ${
+                            collapsed ? "hidden" : ""
+                          }`}
+                        >
+                          {item.title}
+                        </span>
                       </Link>
                     ) : (
-                      <Link href={item.url} className="flex items-center gap-3 w-full">
-                        <item.icon />
-                        <span>{item.title}</span>
+                      <Link
+                        href={item.url}
+                        className="flex items-center w-full"
+                      >
+                        <item.icon className="shrink-0 " />
+                        <span
+                          className={`ml-3 truncate text-base ${
+                            collapsed ? "hidden" : ""
+                          }`}
+                        >
+                          {item.title}
+                        </span>
                       </Link>
                     )}
                   </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+                );
+
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    {collapsed ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>{content}</TooltipTrigger>
+                        <TooltipContent side="right">
+                          {item.title}
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      content
+                    )}
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>
-  )
+  );
 }

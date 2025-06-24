@@ -40,6 +40,8 @@ type SidebarContextProps = {
   setOpenMobile: (open: boolean) => void
   isMobile: boolean
   toggleSidebar: () => void
+  collapsed : boolean
+  setCollapsed: (collapsed: boolean) => void  
 }
 
 const SidebarContext = React.createContext<SidebarContextProps | null>(null)
@@ -112,20 +114,32 @@ function SidebarProvider({
   // We add a state so that we can do data-state="expanded" or "collapsed".
   // This makes it easier to style the sidebar with Tailwind classes.
   const state = open ? "expanded" : "collapsed"
+  const [collapsed, setCollapsed] = React.useState(false)
 
-  const contextValue = React.useMemo<SidebarContextProps>(
-    () => ({
-      state,
-      open,
-      setOpen,
-      isMobile,
-      openMobile,
-      setOpenMobile,
-      toggleSidebar,
-    }),
-    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
-  )
-
+const contextValue = React.useMemo<SidebarContextProps>(
+  () => ({
+    state,
+    open,
+    setOpen,
+    isMobile,
+    openMobile,
+    setOpenMobile,
+    toggleSidebar,
+    collapsed,         // ✅ tambahkan ini
+    setCollapsed       // ✅ dan ini
+  }),
+  [
+    state,
+    open,
+    setOpen,
+    isMobile,
+    openMobile,
+    setOpenMobile,
+    toggleSidebar,
+    collapsed,         // ✅ dependensi juga
+    setCollapsed
+  ]
+)
   return (
     <SidebarContext.Provider value={contextValue}>
       <TooltipProvider delayDuration={0}>
