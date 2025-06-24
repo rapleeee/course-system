@@ -15,7 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
   CircleUser,
@@ -28,7 +28,9 @@ import {
   Award,
   MessageCircle,
   UserCheck,
-  Settings
+  Settings,
+  Menu,
+  X,
 } from "lucide-react";
 
 type Props = {
@@ -53,13 +55,14 @@ const adminSidebar = [
   { name: "Sertifikat", icon: <UserCheck size={18} />, href: "/admin/certificates" },
   { name: "Feedback", icon: <MessageCircle size={18} />, href: "/admin/feedback" },
   { name: "Manajemen User", icon: <Users size={18} />, href: "/admin/users" },
-  { name: "Pengaturan", icon: <Settings size={18} />, href: "/admin/adminSettings" }
+  { name: "Pengaturan", icon: <Settings size={18} />, href: "/admin/adminSettings" },
 ];
 
 export default function AdminLayout({ children, pageTitle = "Admin Dashboard" }: Props) {
   const router = useRouter();
   const [authorized, setAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profile, setProfile] = useState<ProfileData | null>(null);
 
   useEffect(() => {
@@ -95,37 +98,53 @@ export default function AdminLayout({ children, pageTitle = "Admin Dashboard" }:
   if (!authorized) return null;
 
   return (
-    <div className="flex min-h-screen bg-gray-100 dark:bg-neutral-900">
-      <aside className="w-64 bg-white dark:bg-neutral-800 border-r border-gray-200 dark:border-neutral-700 p-6 space-y-6">
-        <div className="text-2xl font-bold">Admin Panel</div>
-        <nav className="space-y-2">
-          {adminSidebar.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-neutral-700 px-3 py-2 rounded-md"
-            >
-              {item.icon}
-              {item.name}
-            </Link>
-          ))}
-        </nav>
+    <div className="flex h-screen bg-gray-100 dark:bg-neutral-900 overflow-hidden">
+      <aside
+        className={`fixed lg:static z-40 top-0 left-0 h-full w-64 bg-white dark:bg-neutral-800 border-r border-gray-200 dark:border-neutral-700 flex flex-col justify-between p-6 transform transition-transform ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } lg:translate-x-0`}
+      >
+        <div>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Admin Panel</h2>
+            <button onClick={() => setSidebarOpen(false)} className="lg:hidden">
+              <X className="text-gray-600 dark:text-white" />
+            </button>
+          </div>
+          <nav className="space-y-1">
+            {adminSidebar.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={() => setSidebarOpen(false)}
+                className="flex items-center gap-3 text-sm px-3 py-2 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
+              >
+                {item.icon}
+                {item.name}
+              </Link>
+            ))}
+          </nav>
+        </div>
         <button
-          className="w-full flex items-center justify-center gap-2 mt-10 text-red-500 hover:bg-red-800 hover:text-white border bg-red-200 rounded-md px-4 py-2"
+          className="w-full flex items-center justify-center gap-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900 hover:text-red-700 border bg-red-50 dark:bg-red-200 rounded-md px-4 py-2 transition-all"
           onClick={handleLogout}
         >
           <LogOut size={16} /> Logout
         </button>
       </aside>
-
-      <main className="flex-1">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h1 className="text-xl font-bold">{pageTitle}</h1>
+      <main className="flex-1 flex flex-col h-full overflow-hidden">
+        <header className="flex items-center justify-between px-6 py-4 border-b bg-white dark:bg-neutral-900 sticky top-0 z-10">
+          <div className="flex items-center gap-4">
+            <button className="lg:hidden" onClick={() => setSidebarOpen(true)}>
+              <Menu className="text-gray-700 dark:text-white" />
+            </button>
+            <h1 className="text-xl font-bold text-gray-800 dark:text-white">{pageTitle}</h1>
+          </div>
           <div className="flex items-center gap-4">
             <ModeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger className="outline-none">
-                <CircleUser className="w-7 h-7 cursor-pointer" />
+                <CircleUser className="w-7 h-7 cursor-pointer text-gray-600 dark:text-white" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
@@ -145,9 +164,17 @@ export default function AdminLayout({ children, pageTitle = "Admin Dashboard" }:
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        </div>
-        <div className="p-6">{children}</div>
+        </header>
+        <div className="p-6 overflow-y-auto flex-1">{children}</div>
       </main>
+
+      {/* Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-30 z-30 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
     </div>
   );
 }
