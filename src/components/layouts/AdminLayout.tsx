@@ -31,7 +31,42 @@ import {
   Settings,
   Menu,
   X,
+  FilePlus2,
 } from "lucide-react";
+
+// Sidebar menu structure
+const sidebarMenu = [
+  {
+    title: "Dasbor",
+    items: [
+      { name: "Dashboard", icon: <LayoutDashboard size={18} />, href: "/admin/dashboard" },
+    ],
+  },
+  {
+    title: "Manajemen Konten",
+    items: [
+      { name: "Tambah Course", icon: <FilePlus2 size={18} />, href: "/admin/addcourses" },
+      { name: "Manajemen Course", icon: <BookOpen size={18} />, href: "/admin/managementcourse" },
+      { name: "Manajemen Event", icon: <CalendarCheck size={18} />, href: "/admin/events" },
+      { name: "Kategori", icon: <Layers size={18} />, href: "/admin/categories" },
+    ],
+  },
+  {
+    title: "Fitur",
+    items: [
+      { name: "Leaderboard", icon: <Award size={18} />, href: "/admin/leaderboard" },
+      { name: "Sertifikat", icon: <UserCheck size={18} />, href: "/admin/certificates" },
+      { name: "Feedback", icon: <MessageCircle size={18} />, href: "/admin/feedback" },
+    ],
+  },
+  {
+    title: "Lainnya",
+    items: [
+      { name: "Manajemen User", icon: <Users size={18} />, href: "/admin/users" },
+      { name: "Pengaturan", icon: <Settings size={18} />, href: "/admin/adminSettings" },
+    ],
+  },
+];
 
 type Props = {
   children: React.ReactNode;
@@ -45,18 +80,6 @@ type ProfileData = {
   description?: string;
   photoURL?: string;
 };
-
-const adminSidebar = [
-  { name: "Dashboard", icon: <LayoutDashboard size={18} />, href: "/admin/dashboard" },
-  { name: "Manajemen Course", icon: <BookOpen size={18} />, href: "/admin/addcourses" },
-  { name: "Manajemen Event", icon: <CalendarCheck size={18} />, href: "/admin/events" },
-  { name: "Kategori", icon: <Layers size={18} />, href: "/admin/categories" },
-  { name: "Leaderboard", icon: <Award size={18} />, href: "/admin/leaderboard" },
-  { name: "Sertifikat", icon: <UserCheck size={18} />, href: "/admin/certificates" },
-  { name: "Feedback", icon: <MessageCircle size={18} />, href: "/admin/feedback" },
-  { name: "Manajemen User", icon: <Users size={18} />, href: "/admin/users" },
-  { name: "Pengaturan", icon: <Settings size={18} />, href: "/admin/adminSettings" },
-];
 
 export default function AdminLayout({ children, pageTitle = "Admin Dashboard" }: Props) {
   const router = useRouter();
@@ -111,17 +134,26 @@ export default function AdminLayout({ children, pageTitle = "Admin Dashboard" }:
               <X className="text-gray-600 dark:text-white" />
             </button>
           </div>
-          <nav className="space-y-1">
-            {adminSidebar.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                onClick={() => setSidebarOpen(false)}
-                className="flex items-center gap-3 text-sm px-3 py-2 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
-              >
-                {item.icon}
-                {item.name}
-              </Link>
+          <nav className="space-y-6">
+            {sidebarMenu.map((section) => (
+              <div key={section.title}>
+                <p className="text-xs uppercase font-semibold text-gray-400 tracking-wide mb-2">
+                  {section.title}
+                </p>
+                <div className="space-y-1">
+                  {section.items.map((item) => (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      onClick={() => setSidebarOpen(false)}
+                      className="flex items-center gap-3 text-sm px-3 py-2 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
+                    >
+                      {item.icon}
+                      {item.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
             ))}
           </nav>
         </div>

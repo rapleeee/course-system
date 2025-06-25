@@ -1,7 +1,14 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore'; // 👈 tambahkan ini
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+} from "firebase/auth";
+import { getFirestore } from "firebase/firestore"; // Firestore
+import { getStorage } from "firebase/storage";     // ✅ Storage
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -11,7 +18,7 @@ const firebaseConfig = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
 // Initialize Firebase
@@ -19,16 +26,17 @@ const app = initializeApp(firebaseConfig);
 
 // Firebase services
 const auth = getAuth(app);
-const db = getFirestore(app); // 👈 inisialisasi Firestore
+const db = getFirestore(app);
+const storage = getStorage(app); // ✅ Inisialisasi Storage
 
-// Google authentication provider
 const googleProvider = new GoogleAuthProvider();
 
 export {
   auth,
-  db, // 👈 export db agar bisa dipakai di seluruh aplikasi
+  db,
+  storage, // ✅ export storage
   googleProvider,
   signInWithPopup,
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword
+  createUserWithEmailAndPassword,
 };

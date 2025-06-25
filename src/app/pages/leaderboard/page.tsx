@@ -46,28 +46,34 @@ export default function LeaderboardPage() {
   return (
     <Layout pageTitle="Leaderboard">
       <div className="w-full mx-auto space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex-col justify-between lg:items-center lg:flex-row flex">
           <h1 className="text-3xl font-bold">Leaderboard</h1>
-          <div className="flex gap-2">
-            {["weekly", "monthly", "overall"].map((tab) => (
-              <Button
-                key={tab}
-                variant={activeTab === tab ? "default" : "outline"}
-                onClick={() => setActiveTab(tab)}
-              >
-                {tab}
-              </Button>
-            ))}
+          <div className="overflow-x-auto max-w-full">
+            <div className="inline-flex gap-2 sm:gap-3">
+              {["weekly", "monthly", "overall"].map((tab) => (
+                <Button
+                  key={tab}
+                  variant={activeTab === tab ? "default" : "outline"}
+                  onClick={() => setActiveTab(tab)}
+                  className="whitespace-nowrap"
+                >
+                  {tab}
+                </Button>
+              ))}
+            </div>
           </div>
         </div>
 
         {loading ? (
-          <div className="text-center mt-10 text-gray-500">Loading leaderboard...</div>
+          <div className="text-center mt-10 text-gray-500">
+            Loading leaderboard...
+          </div>
         ) : users.length === 0 ? (
           <div className="flex flex-col items-center justify-center text-center mt-12 space-y-4">
             <h2 className="text-xl font-semibold">Leaderboard kosong nih 🔥</h2>
             <p className="text-gray-500 max-w-md">
-              Yuk kerjain tugas, kumpulkan poin, dan jadilah yang terbaik di leaderboard!
+              Yuk kerjain tugas, kumpulkan poin, dan jadilah yang terbaik di
+              leaderboard!
             </p>
           </div>
         ) : (
