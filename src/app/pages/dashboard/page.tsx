@@ -1,11 +1,12 @@
 "use client"
-import React, { useEffect, useState } from 'react'
-import { useAuth } from '@/lib/useAuth'
-import Layout from '@/components/layout'
-import Link from 'next/link'
-import CardDashboard from '@/components/ui/CardDashboard'
-import { db } from '@/lib/firebase'
-import { doc, getDoc, getDocs, collection } from 'firebase/firestore'
+
+import React, { useEffect, useState } from "react"
+import { useAuth } from "@/lib/useAuth"
+import Layout from "@/components/layout"
+import Link from "next/link"
+import CardDashboard from "@/components/ui/CardDashboard"
+import { db } from "@/lib/firebase"
+import { doc, getDoc } from "firebase/firestore"
 
 type ProfileData = {
   name: string
@@ -17,17 +18,10 @@ type ProfileData = {
   claimedCertificates?: string[]
 }
 
-type Course = {
-  id: string
-  title: string
-  status: "ongoing" | "finished"
-}
-
 export default function DashboardPage() {
   const { user, loading } = useAuth()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [profile, setProfile] = useState<ProfileData | null>(null)
-  const [ongoingCourses, setOngoingCourses] = useState<number>(0)
 
   useEffect(() => {
     if (user) {
@@ -45,17 +39,6 @@ export default function DashboardPage() {
       if (docSnap.exists()) {
         const data = docSnap.data() as ProfileData
         setProfile(data)
-
-        // Fetch courses if user has claimedCourses
-        if (data.claimedCourses && data.claimedCourses.length > 0) {
-          const querySnap = await getDocs(collection(db, "courses"))
-          const claimed = querySnap.docs
-            .filter(doc => data.claimedCourses?.includes(doc.id))
-            .map(doc => doc.data() as Course)
-
-          const ongoing = claimed.filter(c => c.status === "ongoing")
-          setOngoingCourses(ongoing.length)
-        }
       }
     } catch (error) {
       console.error("Gagal mengambil data profil:", error)
@@ -79,6 +62,7 @@ export default function DashboardPage() {
 
   const totalKelas = profile?.claimedCourses?.length || 0
   const totalSertifikat = profile?.claimedCertificates?.length || 0
+  const ongoingCourses = totalKelas // diasumsikan semua kelas masih berjalan
 
   return (
     <Layout pageTitle="Dashboard">

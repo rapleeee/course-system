@@ -16,6 +16,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/firebase";
 import { doc, deleteDoc } from "firebase/firestore";
+import Link from "next/link";
+import { Input } from "@/components/ui/input";
+import { updateDoc } from "firebase/firestore";
+import { toast } from "sonner"; // pastikan kamu sudah install `sonner`
 
 type CourseCardProps = {
   id: string;
@@ -24,66 +28,123 @@ type CourseCardProps = {
   imageUrl?: string;
   isFree: boolean;
   materialType: string;
-  onDeleted?: () => void; // untuk refresh list setelah hapus
+  onDeleted?: () => void;
 };
 
 export default function CourseCard({
   id,
   title,
   mentor,
+  imageUrl,
   isFree,
   materialType,
   onDeleted,
 }: CourseCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  // State lokal untuk edit form
+  const [editTitle, setEditTitle] = useState(title);
+  const [editMentor, setEditMentor] = useState(mentor);
 
   const handleDelete = async () => {
     await deleteDoc(doc(db, "courses", id));
     setShowDeleteModal(false);
-    onDeleted?.(); // callback untuk refresh list
+    onDeleted?.();
   };
 
+  const displayedImage =
+    imageUrl && imageUrl.trim() !== "" ? imageUrl : "/photos/working.jpg";
+
+  const handleEditSubmit = async () => {
+  try {
+    if (!editTitle.trim() || !editMentor.trim()) {
+      toast.error("Judul dan mentor tidak boleh kosong.");
+      return;
+    }
+
+    const ref = doc(db, "courses", id);
+    await updateDoc(ref, {
+      title: editTitle,
+      mentor: editMentor,
+    });
+
+    toast.success("Course berhasil diperbarui.");
+    setShowEditModal(false);
+    onDeleted?.(); // pakai untuk refresh list
+  } catch (error) {
+    console.error("Gagal update course:", error);
+    toast.error("Gagal memperbarui course.");
+  }
+};
+
   return (
-    <Card className="p-4 flex-col border rounded-lg hover:shadow transition">
-      <Image
-        src="/photos/working.jpg"
-        alt={title}
-        width={550}
-        height={80}
-        className="rounded-md object-cover"
-      />
-      <div className=" flex flex-col items-start text-left">
-        <h3 className="text-lg font-semibold">{title}</h3>
-        <p className="text-sm text-gray-500">Mentor: {mentor}</p>
-        <p className="text-sm text-gray-500">
-          Tipe: {materialType} | {isFree ? "Gratis" : "Berbayar"}
-        </p>
-      </div>
-      <div className="flex gap-2">
-        <Dialog>
+    <Card className="flex flex-col border rounded-lg hover:shadow transition relative group">
+      {/* Area yang dapat diklik untuk buka detail */}
+      <Link
+        href={`/admin/course/${id}`}
+        className="p-4 block cursor-pointer hover:bg-gray-50 dark:hover:bg-neutral-800 transition rounded-t-lg"
+      >
+        <Image
+          src={displayedImage}
+          alt={title}
+          width={550}
+          height={150}
+          className="rounded-md object-cover mb-3"
+        />
+        <div className="flex flex-col items-start text-left mb-3">
+          <h3 className="text-lg font-semibold">{title}</h3>
+          <p className="text-sm text-gray-500">Mentor: {mentor}</p>
+          <p className="text-sm text-gray-500">
+            Tipe: {materialType} | {isFree ? "Gratis" : "Berbayar"}
+          </p>
+        </div>
+      </Link>
+
+      {/* Tombol Edit & Hapus */}
+      <div className="flex gap-2 px-4 pb-4">
+        <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="outline">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={(e) => e.stopPropagation()}
+            >
               <Pencil className="w-4 h-4 mr-1" /> Edit
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Edit Course (Belum Implement)</DialogTitle>
+              <DialogTitle>Edit Course</DialogTitle>
             </DialogHeader>
-            <p className="text-sm text-gray-500">
-              Fitur edit akan ditambahkan nanti.
-            </p>
-            <DialogFooter>
+            <div className="space-y-3">
+              <Input
+                placeholder="Judul Course"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+              />
+              <Input
+                placeholder="Mentor"
+                value={editMentor}
+                onChange={(e) => setEditMentor(e.target.value)}
+              />
+            </div>
+            <DialogFooter className="mt-4">
               <DialogClose asChild>
-                <Button variant="secondary">Tutup</Button>
+                <Button variant="secondary">Batal</Button>
               </DialogClose>
+              <Button onClick={handleEditSubmit}>Simpan</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
         <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="destructive">
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={(e) => e.stopPropagation()}
+            >
               <Trash2 className="w-4 h-4 mr-1" /> Hapus
             </Button>
           </DialogTrigger>
@@ -92,7 +153,8 @@ export default function CourseCard({
               <DialogTitle>Hapus Course</DialogTitle>
             </DialogHeader>
             <p className="text-sm text-gray-600">
-              Apakah kamu yakin ingin menghapus course <strong>{title}</strong>?
+              Apakah kamu yakin ingin menghapus course{" "}
+              <strong>{title}</strong>?
             </p>
             <DialogFooter>
               <DialogClose asChild>

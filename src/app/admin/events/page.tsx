@@ -1,10 +1,12 @@
-import AdminLayout from '@/components/layouts/AdminLayout'
-import { Construction } from 'lucide-react'
-import React from 'react'
+"use client";
 
-export default function page() {
+import React from "react";
+import AdminLayout from "@/components/layouts/AdminLayout";
+import { Construction } from "lucide-react";
+
+export default function EventPage() {
   return (
-    <AdminLayout pageTitle="Halaman Sertifikat">
+    <AdminLayout pageTitle="Halaman Event">
       <div className="flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center text-center space-y-6 max-w-md px-4">
           <Construction className="w-16 h-16 text-yellow-500 animate-bounce" />
@@ -21,5 +23,5 @@ export default function page() {
         </div>
       </div>
     </AdminLayout>
-  )
+  );
 }

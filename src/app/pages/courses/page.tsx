@@ -1,146 +1,166 @@
 "use client";
-import React, { useEffect, useState } from "react";
+
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/useAuth";
-import Layout from "@/components/layout";
-import Link from "next/link";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, collection, getDocs, setDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
+import Layout from "@/components/layout";
+import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-
-type ProfileData = {
-  name: string;
-  email: string;
-  level?: string;
-  description?: string;
-  photoURL?: string;
-  claimedCourses?: string[];
-};
+import Link from "next/link";
 
 type Course = {
   id: string;
   title: string;
   description: string;
+  mentor: string;
+  imageUrl: string;
+  isFree: boolean;
+  materialType: string;
+};
+
+type ProfileData = {
+  name: string;
+  email: string;
+  claimedCourses?: string[];
 };
 
 export default function CoursesPage() {
   const { user, loading } = useAuth();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [claiming, setClaiming] = useState("");
 
   useEffect(() => {
     if (user) {
       setIsAuthenticated(true);
       fetchProfile(user.uid);
       fetchCourses();
-    } else {
-      setIsAuthenticated(false);
     }
   }, [user]);
 
   const fetchProfile = async (uid: string) => {
-    const docRef = doc(db, "users", uid);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      setProfile(docSnap.data() as ProfileData);
+    const snap = await getDoc(doc(db, "users", uid));
+    if (snap.exists()) {
+      setProfile(snap.data() as ProfileData);
     }
   };
 
   const fetchCourses = async () => {
-    const querySnap = await getDocs(collection(db, "courses"));
+    const snap = await getDocs(collection(db, "courses"));
     const data: Course[] = [];
-    querySnap.forEach((doc) => {
+    snap.forEach((doc) => {
       data.push({ id: doc.id, ...doc.data() } as Course);
     });
     setCourses(data);
   };
 
   const handleClaim = async (courseId: string) => {
-    if (!user) return;
+    if (!user || !profile) return;
+    setClaiming(courseId);
     const userRef = doc(db, "users", user.uid);
-    const current = profile?.claimedCourses || [];
-    const updated = [...new Set([...current, courseId])];
-    await setDoc(userRef, { claimedCourses: updated }, { merge: true });
-    setProfile((prev) => (prev ? { ...prev, claimedCourses: updated } : prev));
+    const claimed = new Set(profile.claimedCourses || []);
+    claimed.add(courseId);
+    await setDoc(userRef, { claimedCourses: Array.from(claimed) }, { merge: true });
+    setProfile({ ...profile, claimedCourses: Array.from(claimed) });
+    setClaiming("");
   };
 
   if (loading)
-    return (
-      <div className="flex justify-center items-center h-screen">
-        Loading...
-      </div>
-    );
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated)
     return (
-      <div className="flex flex-col items-center justify-center h-screen text-center">
-        <p className="mb-2">
-          You must be logged in to access this page. Redirecting...
-        </p>
+      <div className="flex items-center justify-center h-screen flex-col">
+        <p className="text-center mb-2">Kamu belum login. Silakan login terlebih dahulu.</p>
         <Link href="/auth/login" className="text-blue-500 hover:underline">
-          Go to Login
+          Ke Halaman Login
         </Link>
       </div>
     );
-  }
 
-  const claimedCourses = profile?.claimedCourses || [];
+  const claimed = profile?.claimedCourses || [];
 
   return (
     <Layout pageTitle="Kelas Kamu">
-      <main className="space-y-8">
-        {/* Bagian Kelas yang sudah diklaim */}
-        <div>
-          <h2 className="text-xl font-bold mb-4">Kelas yang Kamu Ikuti</h2>
-          {claimedCourses.length === 0 ? (
-            <p className="text-gray-500">Kamu belum mengikuti kelas manapun.</p>
+      <div className="space-y-10">
+        <section>
+          <h2 className="text-2xl font-bold mb-4">Kelas yang Kamu Ikuti</h2>
+          {claimed.length === 0 ? (
+            <div className="p-6 flex flex-col items-center text-center text-gray-500">
+              <p>Kamu belum mengikuti kelas apapun.</p>
+            </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {courses
-                .filter((c) => claimedCourses.includes(c.id))
+                .filter((c) => claimed.includes(c.id))
                 .map((course) => (
-                  <Card key={course.id} className="p-4">
-                    <h3 className="font-semibold text-lg">{course.title}</h3>
-                    <p className="text-sm text-gray-600">
-                      {course.description}
-                    </p>
-                  </Card>
+                  <Link
+                    key={course.id}
+                    href={`/pages/courses/${course.id}`}
+                    className="block"
+                  >
+                    <Card className="p-4 space-y-2 cursor-pointer hover:shadow-lg transition">
+                      <Image
+                        src={course.imageUrl || "/photos/working.jpg"}
+                        alt={course.title}
+                        width={400}
+                        height={200}
+                        className="rounded w-full h-40 object-cover"
+                      />
+                      <h3 className="text-lg font-semibold">{course.title}</h3>
+                      <p className="text-sm text-gray-600">{course.description}</p>
+                      <p className="text-sm text-gray-500">
+                        Mentor: {course.mentor} | {course.materialType} |{" "}
+                        {course.isFree ? "Gratis" : "Berbayar"}
+                      </p>
+                    </Card>
+                  </Link>
                 ))}
             </div>
           )}
-        </div>
-
-        {/* Bagian daftar semua kelas */}
-        <div>
-          <h2 className="text-xl font-bold mb-4">Daftar Kelas Tersedia</h2>
+        </section>
+        <section>
+          <h2 className="text-2xl font-bold mb-4">Daftar Kelas Tersedia</h2>
           {courses.length === 0 ? (
-            <p className="text-gray-500">
-              Belum ada kelas yang tersedia. Sabar ya, kelas akan segera dibuka
-              oleh gurumu ✨
-            </p>
+            <div className="p-6 flex flex-col items-center text-center text-gray-500">
+              <p>Belum ada kelas tersedia saat ini. Tunggu update dari gurumu.</p>
+            </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {courses.map((course) => (
-                <Card key={course.id} className="p-4">
-                  <h3 className="font-semibold text-lg">{course.title}</h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {course.description}
+                <Card key={course.id} className="p-4 space-y-2">
+                  <Image
+                    src={course.imageUrl || "/photos/working.jpg"}
+                    alt={course.title}
+                    width={400}
+                    height={200}
+                    className="rounded w-full h-40 object-cover"
+                  />
+                  <h3 className="text-lg font-semibold">{course.title}</h3>
+                  <p className="text-sm text-gray-600">{course.description}</p>
+                  <p className="text-sm text-gray-500">
+                    Mentor: {course.mentor} | {course.materialType} |{" "}
+                    {course.isFree ? "Gratis" : "Berbayar"}
                   </p>
                   <Button
                     onClick={() => handleClaim(course.id)}
-                    disabled={claimedCourses.includes(course.id)}
+                    disabled={claimed.includes(course.id) || claiming === course.id}
                   >
-                    {claimedCourses.includes(course.id)
+                    {claimed.includes(course.id)
                       ? "Sudah Diikuti"
+                      : claiming === course.id
+                      ? "Mengikuti..."
                       : "Ikuti Kelas"}
                   </Button>
                 </Card>
               ))}
             </div>
           )}
-        </div>
-      </main>
+        </section>
+      </div>
     </Layout>
   );
 }
