@@ -26,9 +26,7 @@ export default function AddCoursesPage() {
     e.preventDefault();
     setLoading(true);
 
-    let imageUrl =
-      "https://firebasestorage.googleapis.com/v0/b/mentora.appspot.com/o/default-course.jpg?alt=media";
-
+   let imageUrl = "https://firebasestorage.googleapis.com/v0/b/sarayaplus.appspot.com/o/default-course.jpg?alt=media";
     try {
       if (image) {
         const imageRef = ref(storage, `course-images/${Date.now()}-${image.name}`);
