@@ -1,8 +1,17 @@
 [
   {
-    "origin": ["*"],
+    "origin": [
+      "http://localhost:3000",
+      "https://course-system-gamma.vercel.app",
+      "https://course-system-git-development-rapleeees-projects.vercel.app",
+      "https://mentora.smkpesat.sch.id"
+    ],
     "method": ["GET", "POST", "PUT", "DELETE"],
     "maxAgeSeconds": 3600,
-    "responseHeader": ["Content-Type", "Authorization"]
+    "responseHeader": [
+      "Content-Type",
+      "Authorization",
+      "Access-Control-Allow-Origin"
+    ]
   }
 ]
