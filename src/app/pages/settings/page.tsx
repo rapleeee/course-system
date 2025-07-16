@@ -91,15 +91,14 @@ export default function SettingsPage() {
             Edit Profil
           </Button>
         </div>
-
-        {modalOpen && user && profile && (
-          <EditProfileModal
-            userId={user.uid}
-            initialData={profile}
-            onClose={() => setModalOpen(false)}
-            onUpdated={() => fetchProfile(user.uid)}
-          />
-        )}
+{modalOpen && user && profile && (
+  <EditProfileModal
+    userId={user.uid}
+    initialData={profile}
+    onClose={() => setModalOpen(false)}
+    onUpdated={() => fetchProfile(user.uid)}
+  />
+)}
       </div>
     </Layout>
   );

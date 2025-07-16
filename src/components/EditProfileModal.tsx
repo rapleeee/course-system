@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import {
   Dialog,
@@ -36,11 +37,15 @@ export default function EditProfileModal({
 }: Props) {
   const [name, setName] = useState(initialData?.name || "");
   const [level, setLevel] = useState(initialData?.level || "");
-  const [description, setDescription] = useState(
-    initialData?.description || ""
-  );
+  const [description, setDescription] = useState(initialData?.description || "");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(true); // kontrol modal terbuka/tutup
+
+  const handleClose = () => {
+    setOpen(false);
+    onClose();
+  };
 
   const handleSave = async () => {
     if (!userId) {
@@ -53,7 +58,6 @@ export default function EditProfileModal({
     try {
       let photoURL = initialData?.photoURL || "";
 
-      // Jika ada file baru yang dipilih, upload ke Firebase Storage
       if (photoFile) {
         const storage = getStorage();
         const photoRef = ref(storage, `users/${userId}/profile.jpg`);
@@ -76,7 +80,7 @@ export default function EditProfileModal({
 
       toast.success("Profil berhasil diperbarui 🎉");
       await onUpdated();
-      onClose();
+      handleClose();
     } catch (err) {
       console.error("Gagal update:", err);
       toast.error("Gagal menyimpan data.");
@@ -86,7 +90,7 @@ export default function EditProfileModal({
   };
 
   return (
-    <Dialog open onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(val) => !val && handleClose()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit Profil</DialogTitle>
@@ -120,17 +124,17 @@ export default function EditProfileModal({
                 const file = e.target.files?.[0];
                 if (file && file.size > 1024 * 1024) {
                   toast.error("Ukuran gambar maksimal 1MB");
-                  e.target.value = ""; // reset input
+                  e.target.value = "";
                   return;
                 }
                 setPhotoFile(file || null);
               }}
-            />{" "}
+            />
           </div>
         </div>
 
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={handleClose}>
             Batal
           </Button>
           <Button onClick={handleSave} disabled={loading}>

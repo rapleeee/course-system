@@ -3,12 +3,19 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { db } from "@/lib/firebase";
-import { collection, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+} from "firebase/firestore";
 import Layout from "@/components/layout";
 import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { toast } from "sonner";
 
 type Course = {
   id: string;
@@ -30,28 +37,38 @@ export default function CoursesPage() {
   const { user, loading } = useAuth();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [claiming, setClaiming] = useState<string>("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [claiming, setClaiming] = useState("");
 
   useEffect(() => {
     if (user) {
       setIsAuthenticated(true);
-      fetchProfile(user.uid);
-      fetchCourses();
+      fetchProfileAndCourses(user.uid);
     }
   }, [user]);
 
-  const fetchProfile = async (uid: string) => {
-    const snap = await getDoc(doc(db, "users", uid));
-    if (snap.exists()) {
+  const fetchProfileAndCourses = async (uid: string) => {
+    const userRef = doc(db, "users", uid);
+    const snap = await getDoc(userRef);
+
+    if (!snap.exists() && user) {
+      await setDoc(userRef, {
+        name: user.displayName || "",
+        email: user.email || "",
+        claimedCourses: [],
+      });
+      setProfile({
+        name: user.displayName || "",
+        email: user.email || "",
+        claimedCourses: [],
+      });
+    } else {
       setProfile(snap.data() as ProfileData);
     }
-  };
 
-  const fetchCourses = async () => {
-    const snap = await getDocs(collection(db, "courses"));
+    const snapCourses = await getDocs(collection(db, "courses"));
     const data: Course[] = [];
-    snap.forEach((doc) => {
+    snapCourses.forEach((doc) => {
       data.push({ id: doc.id, ...doc.data() } as Course);
     });
     setCourses(data);
@@ -59,13 +76,27 @@ export default function CoursesPage() {
 
   const handleClaim = async (courseId: string) => {
     if (!user || !profile) return;
-    setClaiming(courseId);
-    const userRef = doc(db, "users", user.uid);
-    const claimed = new Set(profile.claimedCourses || []);
-    claimed.add(courseId);
-    await setDoc(userRef, { claimedCourses: Array.from(claimed) }, { merge: true });
-    setProfile({ ...profile, claimedCourses: Array.from(claimed) });
-    setClaiming("");
+
+    try {
+      setClaiming(courseId);
+      const userRef = doc(db, "users", user.uid);
+      const claimed = new Set(profile.claimedCourses || []);
+      claimed.add(courseId);
+
+      await setDoc(
+        userRef,
+        { claimedCourses: Array.from(claimed) },
+        { merge: true }
+      );
+
+      setProfile({ ...profile, claimedCourses: Array.from(claimed) });
+      toast.success("Berhasil mengikuti kelas!");
+    } catch (err) {
+      console.error("Gagal claim:", err);
+      toast.error("Gagal mengikuti kelas.");
+    } finally {
+      setClaiming("");
+    }
   };
 
   if (loading)
@@ -97,11 +128,7 @@ export default function CoursesPage() {
               {courses
                 .filter((c) => claimed.includes(c.id))
                 .map((course) => (
-                  <Link
-                    key={course.id}
-                    href={`/pages/courses/${course.id}`}
-                    className="block"
-                  >
+                  <Link key={course.id} href={`/pages/courses/${course.id}`}>
                     <Card className="p-4 space-y-2 cursor-pointer hover:shadow-lg transition">
                       <Image
                         src={course.imageUrl || "/photos/working.jpg"}
@@ -122,41 +149,50 @@ export default function CoursesPage() {
             </div>
           )}
         </section>
+
         <section>
           <h2 className="text-2xl font-bold mb-4">Daftar Kelas Tersedia</h2>
           {courses.length === 0 ? (
             <div className="p-6 flex flex-col items-center text-center text-gray-500">
-              <p>Belum ada kelas tersedia saat ini. Tunggu update dari gurumu.</p>
+              <p>Belum ada kelas tersedia saat ini.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {courses.map((course) => (
-                <Card key={course.id} className="p-4 space-y-2">
-                  <Image
-                    src={course.imageUrl || "/photos/working.jpg"}
-                    alt={course.title}
-                    width={400}
-                    height={200}
-                    className="rounded w-full h-40 object-cover"
-                  />
-                  <h3 className="text-lg font-semibold">{course.title}</h3>
-                  <p className="text-sm text-gray-600">{course.description}</p>
-                  <p className="text-sm text-gray-500">
-                    Mentor: {course.mentor} | {course.materialType} |{" "}
-                    {course.isFree ? "Gratis" : "Berbayar"}
-                  </p>
-                  <Button
-                    onClick={() => handleClaim(course.id)}
-                    disabled={claimed.includes(course.id) || claiming === course.id}
-                  >
-                    {claimed.includes(course.id)
-                      ? "Sudah Diikuti"
-                      : claiming === course.id
-                      ? "Mengikuti..."
-                      : "Ikuti Kelas"}
-                  </Button>
-                </Card>
-              ))}
+              {courses.map((course) => {
+                const isClaimed = claimed.includes(course.id);
+                return (
+                  <Card key={course.id} className="p-4 space-y-2">
+                    <Image
+                      src={course.imageUrl || "/photos/working.jpg"}
+                      alt={course.title}
+                      width={400}
+                      height={200}
+                      className="rounded w-full h-40 object-cover"
+                    />
+                    <h3 className="text-lg font-semibold">{course.title}</h3>
+                    <p className="text-sm text-gray-600">{course.description}</p>
+                    <p className="text-sm text-gray-500">
+                      Mentor: {course.mentor} | {course.materialType} |{" "}
+                      {course.isFree ? "Gratis" : "Berbayar"}
+                    </p>
+                    <div className="flex justify-between items-center">
+                      <Button
+                        onClick={() => handleClaim(course.id)}
+                        disabled={isClaimed || claiming === course.id}
+                      >
+                        {isClaimed
+                          ? "Sudah Diikuti"
+                          : claiming === course.id
+                          ? "Mengikuti..."
+                          : "Ikuti Kelas"}
+                      </Button>
+                      {isClaimed && (
+                        <span className="text-green-500 text-sm">✔</span>
+                      )}
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </section>
