@@ -17,7 +17,7 @@ export default function ProgramSection() {
         "Komunitas aktif",
         "Portfolio proyek"
       ],
-      icon: <BookOpen className="w-8 h-8 text-[#35bdbd]" />,
+      icon: <BookOpen className="w-8 h-8 text-[#F9F3EF]" />,
     },
     {
       title: "Kelas TaCo Pro",
@@ -74,12 +74,12 @@ export default function ProgramSection() {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className={cn(
                 "relative bg-white dark:bg-neutral-800 rounded-xl shadow-md border border-gray-200 dark:border-neutral-700 ",
-                program.popular && "ring-2 ring-[#35bdbd]"
+                program.popular && "ring-2 dark:ring-[#F9F3EF] ring-[#1B3C53]"
               )}
             >
               {program.popular && (
                 <div className="absolute top-4 right-4">
-                  <span className="px-3 py-1 text-xs font-semibold text-white bg-[#35bdbd] rounded-full">
+                  <span className="px-3 py-1 text-xs font-semibold bg-[#1B3C53] text-[#F9F3EF] dark:text-[#1B3C53] dark:bg-[#F9F3EF] rounded-full">
                     Popular
                   </span>
                 </div>
@@ -98,13 +98,13 @@ export default function ProgramSection() {
                 <ul className="space-y-4 mb-8">
                   {program.features.map((feature, i) => (
                     <li key={i} className="flex items-center gap-3 text-sm">
-                      <Check className="w-4 h-4 text-[#35bdbd]" />
+                      <Check className="w-4 h-4 text-[#F9F3EF]" />
                       <span className="text-gray-600 dark:text-gray-300">{feature}</span>
                     </li>
                   ))}
                 </ul>
                 <Button 
-                  className="w-full bg-[#35bdbd] hover:bg-[#35bdbd]/90 cursor-pointer"
+                  className="w-full bg-[#1B3C53] dark:bg-[#F9F3EF] dark:hover:bg-[#D2C1B6]/90 hover:bg-[#456882]/90 cursor-pointer"
                 >
                   Daftar Sekarang
                   <ArrowRight className="w-5 h-5 ml-2" />

@@ -109,7 +109,7 @@ const handleEmailLogin = async (e: React.FormEvent<HTMLFormElement>) => {
           <Button
             type="submit"
             size="lg"
-            className="w-full bg-[#35bdbd] hover:bg-[#2a9b9b] text-white"
+            className="w-full bg-[#1B3C53] hover:bg-[#456882] text-white"
             disabled={loading}
           >
             {loading ? 'Logging In...' : 'Login'}
@@ -124,11 +124,11 @@ const handleEmailLogin = async (e: React.FormEvent<HTMLFormElement>) => {
 
         <div className="text-center mt-4 text-sm text-gray-600">
           Don’t have an account?{' '}
-          <Link href="/auth/register" className="text-[#35bdbd] hover:underline">Sign up</Link>
+          <Link href="/auth/register" className="text-[#1B3C53] hover:underline">Sign up</Link>
         </div>
       </div>
 
-      <div className="w-full md:w-1/2 mt-10 md:mt-0 bg-[#2a9b9b] p-8 rounded-lg text-white flex justify-center items-center min-h-[300px]">
+      <div className="w-full md:w-1/2 mt-10 md:mt-0 bg-[#1B3C53] p-8 rounded-lg text-white flex justify-center items-center min-h-[300px]">
         <div className="max-w-lg">
           <p className="text-2xl font-semibold mb-4">“{quote}”</p>
           <p className="text-lg">— {author}</p>

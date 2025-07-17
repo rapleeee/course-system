@@ -36,7 +36,7 @@ export default function HeroSection() {
           >
             <p className="text-center text-lg sm:text-xl text-gray-600 dark:text-gray-300">
               Mentora adalah platform belajar coding menyenangkan dan mudah 
-              dengan sistem modular dan gamifikasi. Program utama kami adalah<span className="font-bold bg-[#f5bb64] rounded-lg px-2  text-[#1d857c]">Kelas TaCo</span>, bakalan ngebimbing kamu dari baris code pertama sampai jadi programmer yang siap kerja. 
+              dengan sistem modular dan gamifikasi. Program utama kami adalah<span className="font-bold bg-[#D2C1B6] dark:bg-[#1B3C53] rounded-lg px-2 text-[#1B3C53] dark:text-[#D2C1B6]">Kelas TaCo</span>, bakalan ngebimbing kamu dari baris code pertama sampai jadi programmer yang siap kerja. 
             </p>
           </motion.div>
 
@@ -49,14 +49,14 @@ export default function HeroSection() {
             <Link href="/auth/login">
               <Button 
                 size="lg" 
-                className="bg-[#35bdbd] hover:bg-[#2a9b9b] text-white cursor-pointer"
+                className="bg-[#1B3C53] hover:bg-[#456882] text-white cursor-pointer"
               >
                 Mulai Belajar
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
             <Link href="#program">
-              <Button size="lg" variant="outline" className='cursor-pointer'>
+              <Button size="lg" variant="outline" className='cursor-pointer bg-[#D2C1B6] hover:bg-[#D2C1B6]'>
                 Lihat Program
               </Button>
             </Link>

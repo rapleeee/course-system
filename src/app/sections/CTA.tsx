@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 
 export default function CTASection() {
   return (
-    <section className="py-20 bg-gradient-to-br from-[#35bdbd] to-[#2a9b9b]">
+    <section className="py-20 bg-gradient-to-br from-[#1B3C53] to-[#456882]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
           <motion.div
@@ -31,7 +31,7 @@ export default function CTASection() {
           >
             <Button 
               size="lg" 
-              className="bg-white text-[#35bdbd] hover:bg-gray-50 shadow-lg font-semibold"
+              className="bg-white text-[#1B3C53] hover:bg-[#F9F3EF] shadow-lg font-semibold"
             >
               Mulai Sekarang
               <ArrowRight className="w-5 h-5 ml-2" />
@@ -39,7 +39,7 @@ export default function CTASection() {
             <Button 
               size="lg" 
               variant="outline" 
-              className="border-2  border-white text-[#35bdbd] hover:bg-white/5 font-semibold"
+              className=" text-[#1B3C53] dark:text-[#F9F3EF] hover:bg-[#F9F3EF] font-semibold"
             >
               <Phone className="w-5 h-5 mr-2" />
               Konsultasi Gratis

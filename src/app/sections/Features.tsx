@@ -6,7 +6,7 @@ import Image from "next/image"
 export default function FeaturesSection() {
   const features = [
     {
-      icon: <BookOpen className="w-12 h-12 text-[#35bdbd]" />,
+      icon: <BookOpen className="w-12 h-12 text-[#1B3C53] dark:text-[#D2C1B6]" />,
       title: "Kurikulum Terstruktur",
       description: "Materi pembelajaran yang dirancang khusus untuk persiapan kuliah",
       benefits: [
@@ -16,7 +16,7 @@ export default function FeaturesSection() {
       ]
     },
     {
-      icon: <Users className="w-12 h-12 text-[#35bdbd]" />,
+      icon: <Users className="w-12 h-12 text-[#1B3C53] dark:text-[#D2C1B6]" />,
       title: "Mentor Berpengalaman",
       description: "Dibimbing oleh mentor yang ahli di bidangnya",
       benefits: [
@@ -26,7 +26,7 @@ export default function FeaturesSection() {
       ]
     },
     {
-      icon: <Target className="w-12 h-12 text-[#35bdbd]" />,
+      icon: <Target className="w-12 h-12 text-[#1B3C53] dark:text-[#D2C1B6]" />,
       title: "Pembelajaran Fokus",
       description: "Fokus pada jurusan yang sesuai dengan minat dan bakat",
       benefits: [
@@ -36,7 +36,7 @@ export default function FeaturesSection() {
       ]
     },
     {
-      icon: <Award className="w-12 h-12 text-[#35bdbd]" />,
+      icon: <Award className="w-12 h-12 text-[#1B3C53] dark:text-[#D2C1B6]" />,
       title: "Memiliki Portfolio",
       description: "Mendapatkan portfolio yang dapat digunakan untuk melamar kerja",
       benefits: [
@@ -82,7 +82,7 @@ export default function FeaturesSection() {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className="p-6 bg-white dark:bg-neutral-800 rounded-xl shadow-lg hover:shadow-xl transition-shadow"
             >
-              <div className="mb-4 bg-[#35bdbd]/10 p-3 rounded-lg inline-block">
+              <div className="mb-4 bg-[#1B3C53]/10 dark:bg-[#D2C1B6]/10 p-3 rounded-lg inline-block">
                 {feature.icon}
               </div>
               <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
@@ -90,7 +90,7 @@ export default function FeaturesSection() {
               <ul className="space-y-2">
                 {feature.benefits.map((benefit, idx) => (
                   <li key={idx} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                    <CheckCircle className="w-4 h-4 text-[#35bdbd]" />
+                    <CheckCircle className="w-4 h-4 text-[#1B3C53] dark:text-[#D2C1B6]" />
                     {benefit}
                   </li>
                 ))}

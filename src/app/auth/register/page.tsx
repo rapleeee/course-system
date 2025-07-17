@@ -117,7 +117,7 @@ export default function SignUpPage() {
             className={`w-full ${
               loading
                 ? "bg-gray-400 cursor-not-allowed"
-                : "bg-[#35bdbd] hover:bg-[#2a9b9b]"
+                : "bg-[#1B3C53] hover:bg-[#456882]"
             } text-white cursor-pointer`}
             disabled={loading}
           >
@@ -128,7 +128,7 @@ export default function SignUpPage() {
 
         <div className="text-center mt-4 text-sm text-gray-600">
           Already have an account?{" "}
-          <Link href="/auth/login" className="text-[#35bdbd] hover:underline">
+          <Link href="/auth/login" className="text-[#1B3C53] hover:underline">
             Login
           </Link>
         </div>
