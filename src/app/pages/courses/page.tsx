@@ -35,18 +35,12 @@ type ProfileData = {
 
 export default function CoursesPage() {
   const { user, loading } = useAuth();
-  const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [claiming, setClaiming] = useState<string>("");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+const [profile, setProfile] = useState<ProfileData | null>(null);
+const [courses, setCourses] = useState<Course[]>([]);
+const [claiming, setClaiming] = useState<string>("");
+const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      setIsAuthenticated(true);
-      fetchProfileAndCourses(user.uid);
-    }
-  }, [user]);
-
+useEffect(() => {
   const fetchProfileAndCourses = async (uid: string) => {
     const userRef = doc(db, "users", uid);
     const snap = await getDoc(userRef);
@@ -73,6 +67,12 @@ export default function CoursesPage() {
     });
     setCourses(data);
   };
+
+  if (user) {
+    setIsAuthenticated(true);
+    fetchProfileAndCourses(user.uid);
+  }
+}, [user]); 
 
   const handleClaim = async (courseId: string) => {
     if (!user || !profile) return;
