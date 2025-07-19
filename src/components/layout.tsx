@@ -83,10 +83,10 @@ export default function Layout({ children, pageTitle = "Dashboard" }: LayoutProp
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/courses">Kelas Saya</Link>
+                  <Link href="/pages/courses">Kelas Saya</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/courses">Sertifikat Saya</Link>
+                  <Link href="/pages/courses">Sertifikat Saya</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/pages/settings">Pengaturan</Link>

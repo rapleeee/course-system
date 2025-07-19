@@ -6,6 +6,11 @@ import {
   LogOut,
   ClipboardList,
   Medal,
+  FileText,
+  Rocket,
+  Settings,
+  MessageCircle,
+  Wallet,
 } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -38,58 +43,34 @@ export function AppSidebar() {
     }
   };
 
-  type MenuItem = {
-    title: string;
-    url: string;
-    icon: React.ElementType;
-    action?: 'logout';
-  };
-
-  type MenuGroup = {
-    label: string;
-    items: MenuItem[];
-  };
-
-  // Kelompokkan menu
-  const menuGroups: MenuGroup[] = [
+  const menuGroups = [
     {
       label: "Dashboard",
       items: [
-        {
-          title: "Beranda",
-          url: "/pages/dashboard",
-          icon: Home,
-        },
+        { title: "Beranda", url: "/pages/dashboard", icon: Home },
+        { title: "Langganan", url: "/pages/subscription", icon: Wallet },
       ],
     },
     {
       label: "Pembelajaran",
       items: [
-        {
-          title: "Kelas",
-          url: "/pages/courses",
-          icon: ClipboardList,
-        },
-        {
-          title: "Leaderboard",
-          url: "/pages/leaderboard",
-          icon: Medal,
-        },
+        { title: "Kelas", url: "/pages/courses", icon: ClipboardList },
+        { title: "Tugas & Kuis", url: "/pages/tasks", icon: FileText },
+        { title: "Progress Belajar", url: "/pages/progress", icon: Rocket },
+        { title: "Leaderboard", url: "/pages/leaderboard", icon: Medal },
       ],
     },
     {
       label: "Komunitas",
       items: [
-        {
-          title: "Event Komunitas",
-          url: "/pages/event",
-          icon: Calendar,
-        },
+        { title: "Event Komunitas", url: "/pages/event", icon: Calendar },
+        { title: "Forum Diskusi", url: "/pages/forum", icon: MessageCircle },
       ],
     },
     {
       label: "Akun",
       items: [
+        { title: "Pengaturan Profil", url: "/pages/settings", icon: Settings },
         {
           title: "Logout",
           url: "/auth/login",
