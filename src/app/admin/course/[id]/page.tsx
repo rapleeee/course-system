@@ -17,15 +17,17 @@ type Course = {
   materialType: string;
 };
 
-type Chapter = {
+export type Chapter = {
   id: string;
   title: string;
   description?: string;
-  type: "video" | "module" | "pdf";
-  videoUrl?: string;
-  image?: string;
+  shortDesc?: string;
   text?: string;
+  type: "video" | "module" | "pdf";
+  videoId?: string;
   pdfUrl?: string;
+  image?: string;
+  createdAt: Date | number;
 };
 
 export default function CourseDetailPage() {

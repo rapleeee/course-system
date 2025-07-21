@@ -23,11 +23,17 @@ import { storage } from "@/lib/firebase";
 
 const MySwal = withReactContent(Swal);
 
+// Helper function to extract YouTube video ID
+const getYoutubeId = (url: string) => {
+  const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+  const match = url.match(regex);
+  return match ? match[1] : null;
+};
+
 type Props = {
   courseId: string;
   onChapterAdded: () => void;
 };
-
 
 type NewChapter = {
   title: string;
@@ -35,7 +41,7 @@ type NewChapter = {
   text?: string;
   type: "video" | "module" | "pdf";
   createdAt: FieldValue;
-  videoUrl?: string;
+  videoId?: string; // Changed from videoUrl to videoId
   image?: string;
   pdfUrl?: string;
 };
@@ -43,25 +49,37 @@ type NewChapter = {
 export default function AddChapterModal({ courseId, onChapterAdded }: Props) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-
   const [title, setTitle] = useState("");
   const [shortDesc, setShortDesc] = useState("");
   const [longDesc, setLongDesc] = useState("");
   const [type, setType] = useState<"video" | "module" | "pdf">("video");
   const [file, setFile] = useState<File | null>(null);
+  const [youtubeUrl, setYoutubeUrl] = useState("");
 
   const handleSubmit = async () => {
     try {
-      if (!title || !file) {
-        MySwal.fire("Error", "Judul dan file wajib diisi.", "error");
+      if (!title) {
+        MySwal.fire("Error", "Judul wajib diisi.", "error");
+        return;
+      }
+
+      // Validate based on type
+      if (type === "video") {
+        if (!youtubeUrl) {
+          MySwal.fire("Error", "Link YouTube wajib diisi.", "error");
+          return;
+        }
+        const videoId = getYoutubeId(youtubeUrl);
+        if (!videoId) {
+          MySwal.fire("Error", "Link YouTube tidak valid.", "error");
+          return;
+        }
+      } else if (!file && (type === "module" || type === "pdf")) {
+        MySwal.fire("Error", "File wajib diupload.", "error");
         return;
       }
 
       setLoading(true);
-
-      const storageRef = ref(storage, `chapters/${courseId}/${Date.now()}-${file.name}`);
-      await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
 
       const newChapter: NewChapter = {
         title,
@@ -71,12 +89,19 @@ export default function AddChapterModal({ courseId, onChapterAdded }: Props) {
         createdAt: serverTimestamp(),
       };
 
+      // Handle different types
       if (type === "video") {
-        newChapter.videoUrl = downloadURL;
-      } else if (type === "module") {
-        newChapter.image = downloadURL;
-      } else if (type === "pdf") {
-        newChapter.pdfUrl = downloadURL;
+        newChapter.videoId = getYoutubeId(youtubeUrl) || undefined;
+      } else if (type === "module" || type === "pdf") {
+        const storageRef = ref(storage, `chapters/${courseId}/${Date.now()}-${file!.name}`);
+        await uploadBytes(storageRef, file!);
+        const downloadURL = await getDownloadURL(storageRef);
+        
+        if (type === "module") {
+          newChapter.image = downloadURL;
+        } else {
+          newChapter.pdfUrl = downloadURL;
+        }
       }
 
       await addDoc(collection(db, "courses", courseId, "chapters"), newChapter);
@@ -87,12 +112,13 @@ export default function AddChapterModal({ courseId, onChapterAdded }: Props) {
 
       MySwal.fire("Berhasil", "Chapter berhasil ditambahkan.", "success");
 
-      // Reset state
+      // Reset all states
       setTitle("");
       setShortDesc("");
       setLongDesc("");
       setType("video");
       setFile(null);
+      setYoutubeUrl("");
     } catch (err) {
       console.error(err);
       setLoading(false);
@@ -139,16 +165,36 @@ export default function AddChapterModal({ courseId, onChapterAdded }: Props) {
             <select
               className="w-full border px-3 py-2 rounded"
               value={type}
-onChange={(e) =>
-  setType(e.target.value as "video" | "module" | "pdf")
-}            >
-              <option value="video">Video</option>
+              onChange={(e) => setType(e.target.value as "video" | "module" | "pdf")}
+            >
+              <option value="video">Video YouTube</option>
               <option value="module">Gambar</option>
               <option value="pdf">PDF</option>
             </select>
           </div>
 
-          <Input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+          {type === "video" ? (
+            <div className="space-y-2">
+              <Input
+                placeholder="Masukkan link YouTube (https://youtube.com/watch?v=xxxxx)"
+                value={youtubeUrl}
+                onChange={(e) => setYoutubeUrl(e.target.value)}
+              />
+              <p className="text-xs text-gray-500">
+                Contoh format yang valid:
+                <br />
+                - https://youtube.com/watch?v=xxxxx
+                <br />
+                - https://youtu.be/xxxxx
+              </p>
+            </div>
+          ) : (
+            <Input 
+              type="file" 
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              accept={type === "pdf" ? ".pdf" : "image/*"}
+            />
+          )}
         </div>
 
         <DialogFooter>
