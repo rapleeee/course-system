@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://mentora.smkpesat.sch.id/sitemap.xml
