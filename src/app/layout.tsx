@@ -13,111 +13,42 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-
-
-
 export const metadata: Metadata = {
-  metadataBase: new URL("https://mentora.id"),
+  metadataBase: new URL('https://mentora.smkpesat.sch.id'),
+  title: 'Mentora x Pesat - Platform Pembelajaran Coding Online',
+  description: 'Mentora adalah platform pembelajaran coding online dengan sistem modular yang dirancang untuk kalian yang ingin belajar coding dengan metode gamified. Dengan berbagai materi pembelajaran yang lengkap dan mudah diakses, Mentora menyediakan pengalaman belajar yang menyenangkan dan efektif.',
+  keywords: 'Mentora, SMK Pesat, pembelajaran online, elearning smk pesat, kursus online smk pesat, platform pembelajaran, materi pembelajaran, video tutorial, resources pendidikan, e-learning, pendidikan digital, sekolah menengah kejuruan, SMK Pesat, platform edukasi, pembelajaran digital, kursus online, materi pendidikan, video pembelajaran, resources smk pesat, belajar coding, belajar desain grafis, belajar multimedia, belajar bisnis, belajar teknologi informasi, coding, desain grafis, multimedia, bisnis, teknologi informasi, belajar coding online, belajar desain grafis online, belajar multimedia online, belajar bisnis online, belajar teknologi informasi online, coding online, desain grafis online, multimedia online, bisnis online, teknologi informasi online',
+  alternates: {
+    canonical: '/',
+  },
   robots: {
     index: true,
     follow: true,
     googleBot: {
       index: true,
       follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
     },
   },
-  keywords: [
-    "mentora",
-    "belajar coding",
-    "kelas coding",
-    "programming",
-    "taCo",
-    "kampus tutor",
-    "bootcamp coding",
-    "belajar pemrograman",
-    "kursus online",
-    "coding online",
-    "programmer pemula",
-    "belajar bahasa pemrograman",
-    "belajar web development",
-    "belajar mobile development",
-    "belajar software development",
-    "belajar data science",
-    "belajar machine learning",
-    "belajar artificial intelligence",
-    "belajar game development",
-    "belajar cloud computing",
-    "belajar devops",
-    "belajar cybersecurity",
-    "belajar database",
-    "belajar frontend",
-    "belajar backend",
-    "belajar fullstack",
-    "belajar UI/UX",
-    "belajar desain grafis",
-    "belajar digital marketing",
-    "belajar SEO",
-    "belajar social media marketing",
-    "belajar content marketing",
-    "belajar email marketing",
-    "belajar affiliate marketing",
-    "belajar e-commerce",
-    "belajar bisnis online",
-    "belajar entrepreneurship",
-    "belajar startup",
-    "belajar manajemen proyek",
-    "belajar agile",
-    "belajar scrum",  
-    "belajar product management",
-    "belajar business analysis",
-    "belajar data analysis",
-    "belajar data visualization",
-    "belajar data engineering",
-    "belajar data analytics",
-    "belajar data science online",
-    "belajar coding online",
-    "belajar coding untuk pemula",
-    "belajar coding gratis",
-    "belajar coding di rumah",
-    "belajar coding dengan mentor",
-    "belajar coding dengan gamifikasi",
-    "belajar coding dengan modul",  
-  ],
-  authors: [
-    {
-      name: "Mentora Team",
-      url: "https://mentora.id",
-    },
-  ],
-  creator: "KaTo Team",
-  publisher: "KaTo Team",
-  applicationName: "KaTo - Kampus Tutor",
-  formatDetection: {
-    telephone: false,
-    address: false,
-    email: false,
+  verification: {
+    google: 'tambahkan-kode-verifikasi-google-search-console-disini',
   },
-  title: "Mentora",
-  description: "Mentora adalah platform belajar coding menyenangkan dan mudah dengan sistem modular dan gamifikasi. Program utama kami adalah Kelas TaCo, bakalan ngebimbing kamu dari baris code pertama sampai jadi programmer yang siap kerja.",
   openGraph: {
-    title: "Mentora",
-    description:
-      "Mentora adalah platform belajar coding menyenangkan dan mudah dengan sistem modular dan gamifikasi. Program utama kami adalah Kelas TaCo, bakalan ngebimbing kamu dari baris code pertama sampai jadi programmer yang siap kerja.",
-    url: "https://mentora.id",
-    siteName: "Mentora",
+    title: 'Mentora x SMK Pesat',
+    description: 'Platform E-Learning Resmi Mentora',
+    url: 'https://mentora.smkpesat.sch.id',
+    siteName: 'Mentora x SMK Pesat',
     images: [
       {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Mentora - Belajar Coding",
+        url: '/logo.png',
+        width: 800,
+        height: 600,
       },
     ],
-    locale: "id_ID",
-    type: "website",
+    locale: 'id_ID',
+    type: 'website',
   },
 };
 
@@ -127,7 +58,52 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="id" suppressHydrationWarning>
+      <head>
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "EducationalOrganization",
+            "name": "Mentora x Pesat",
+            "description": "Platform pembelajaran coding online dengan sistem modular yang dirancang untuk kalian yang ingin belajar coding dengan metode gamified.",
+            "url": "https://mentora.smkpesat.sch.id",
+            "founder": {
+              "@type": "Organization",
+              "name": "SMK Pesat"
+            },
+            "foundingDate": "2024",
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "Jl. Poras No. 7 Sindang Barang, Loji",
+              "addressLocality": "Loji, Bogor Barat",
+              "addressRegion": "Kota Bogor",
+              "postalCode": "16116",
+              "addressCountry": "ID"
+            },
+            "sameAs": [
+              "https://www.instagram.com/mentoraxpesat",
+              "https://smkpesat.sch.id"
+            ],
+            "offers": {
+              "@type": "Offer",
+              "category": "Online Learning Platform",
+              "availabilityStarts": "2024-01"
+            },
+            "teaches": [
+              "Coding",
+              "Web Development",
+              "Mobile Development",
+              "UI/UX Design",
+              "Digital Marketing"
+            ],
+            "hasCredential": {
+              "@type": "EducationalOccupationalCredential",
+              "credentialCategory": "Certificate",
+              "educationalLevel": "Vocational Education"
+            }
+          })}
+        </script>
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning

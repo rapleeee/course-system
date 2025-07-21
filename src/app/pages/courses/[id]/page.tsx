@@ -174,7 +174,7 @@ export default function CourseDetailPage() {
     <Layout pageTitle={course.title}>
       <div className="space-y-6">
         {/* Course Header */}
-        <div className="rounded-lg overflow-hidden shadow-lg border bg-white dark:bg-gray-800">
+        <div className="rounded-lg overflow-hidden shadow-lg border bg-white dark:bg-gray-900">
           <div className="relative h-48 md:h-64">
             <Image
               src={course.imageUrl || "/photos/working.jpg"}
