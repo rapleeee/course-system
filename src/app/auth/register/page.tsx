@@ -6,8 +6,11 @@ import { auth, createUserWithEmailAndPassword } from "@/lib/firebase";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
+import { sendEmailVerification } from "firebase/auth";
+import { useRouter } from "next/navigation";
 
 export default function SignUpPage() {
+  const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,7 +20,7 @@ export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const handleSignUp = async (e: React.FormEvent) => {
+   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (password !== confirmPassword) {
@@ -28,22 +31,41 @@ export default function SignUpPage() {
     setLoading(true);
 
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      // Create user
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Send verification email
+      await sendEmailVerification(user);
+
       setLoading(false);
+      
+      toast.success(
+        "Pendaftaran berhasil! Silakan cek email Anda untuk verifikasi.", 
+        { duration: 5000 }
+      );
 
-      toast.success("Pendaftaran berhasil! Silakan login.", {
-        duration: 5000,
-      });
-
-      setTimeout(() => {
-        window.location.href = "/auth/login";
-      }, 2000);
+      // Redirect to verification pending page
+      router.push("/auth/verify-email");
     } catch (err: unknown) {
       setLoading(false);
       if (err instanceof Error) {
-        setError(`Error creating account: ${err.message}`);
+        // Handle specific Firebase errors
+        switch (err.message) {
+          case 'auth/email-already-in-use':
+            setError("Email sudah terdaftar. Silakan gunakan email lain.");
+            break;
+          case 'auth/invalid-email':
+            setError("Format email tidak valid.");
+            break;
+          case 'auth/weak-password':
+            setError("Password terlalu lemah. Minimal 6 karakter.");
+            break;
+          default:
+            setError(`Error: ${err.message}`);
+        }
       } else {
-        setError("Something went wrong while creating account.");
+        setError("Terjadi kesalahan saat membuat akun.");
       }
     }
   };
