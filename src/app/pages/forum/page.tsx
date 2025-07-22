@@ -13,6 +13,7 @@ import {
   doc,
   getDoc,
   deleteDoc,
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,7 +25,7 @@ import { Trash } from "lucide-react";
 type ForumPost = {
   id: string;
   content: string;
-  createdAt: any;
+  createdAt: Timestamp;
   userId: string;
 };
 
@@ -34,9 +35,9 @@ type UserProfile = {
 };
 
 export default function ForumDiscuss() {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const [posts, setPosts] = useState<ForumPost[]>([]);
-  const [profiles, setProfiles] = useState<{ [key: string]: UserProfile }>({});
+  const [profiles, setProfiles] = useState<Record<string, UserProfile>>({});
   const [newPost, setNewPost] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -52,8 +53,8 @@ export default function ForumDiscuss() {
     const userIds = new Set<string>();
 
     snap.forEach((doc) => {
-      const data = doc.data();
-      fetchedPosts.push({ id: doc.id, ...data } as ForumPost);
+      const data = doc.data() as Omit<ForumPost, "id">;
+      fetchedPosts.push({ id: doc.id, ...data });
       userIds.add(data.userId);
     });
 
@@ -62,7 +63,7 @@ export default function ForumDiscuss() {
   };
 
   const fetchProfiles = async (uids: string[]) => {
-    const data: { [key: string]: UserProfile } = {};
+    const data: Record<string, UserProfile> = {};
     await Promise.all(
       uids.map(async (uid) => {
         const docSnap = await getDoc(doc(db, "users", uid));
@@ -75,13 +76,13 @@ export default function ForumDiscuss() {
   };
 
   const handleSubmit = async () => {
-    if (!newPost.trim()) return;
+    if (!newPost.trim() || !user?.uid) return;
 
     setSubmitting(true);
     try {
       await addDoc(collection(db, "forumPosts"), {
         content: newPost.trim(),
-        userId: user?.uid,
+        userId: user.uid,
         createdAt: serverTimestamp(),
       });
       setNewPost("");
@@ -96,8 +97,7 @@ export default function ForumDiscuss() {
   };
 
   const handleDelete = async (postId: string) => {
-    const confirm = window.confirm("Yakin ingin menghapus postingan ini?");
-    if (!confirm) return;
+    if (!window.confirm("Yakin ingin menghapus postingan ini?")) return;
 
     try {
       await deleteDoc(doc(db, "forumPosts", postId));
@@ -151,7 +151,7 @@ export default function ForumDiscuss() {
                   <div>
                     <p className="font-semibold">{profile?.name || "User"}</p>
                     <p className="text-sm text-gray-500">
-                      {new Date(post.createdAt?.toDate?.() || "").toLocaleString("id-ID")}
+                      {post.createdAt?.toDate?.().toLocaleString("id-ID") ?? ""}
                     </p>
                   </div>
                 </div>
