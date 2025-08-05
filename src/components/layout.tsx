@@ -17,6 +17,7 @@ import Link from "next/link";
 import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
+import ChatBox from "./mentorai/ChatBox";
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -34,6 +35,7 @@ type ProfileData = {
 export default function Layout({ children, pageTitle = "Dashboard" }: LayoutProps) {
   const { user } = useAuth();
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [chatList] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -66,6 +68,7 @@ export default function Layout({ children, pageTitle = "Dashboard" }: LayoutProp
           <div className="flex items-center">
             <SidebarTrigger />
             <h1 className="text-2xl font-bold ml-4">{pageTitle}</h1>
+
           </div>
 
           <div className="flex items-center gap-4">
@@ -99,6 +102,8 @@ export default function Layout({ children, pageTitle = "Dashboard" }: LayoutProp
             </DropdownMenu>
           </div>
         </div>
+              <ChatBox chatList={chatList} />
+
         <div className="w-full p-8">{children}</div>
       </main>
     </SidebarProvider>

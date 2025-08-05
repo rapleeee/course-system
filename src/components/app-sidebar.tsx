@@ -11,6 +11,7 @@ import {
   Settings,
   MessageCircle,
   Wallet,
+  School,
 } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -58,6 +59,7 @@ export function AppSidebar() {
         { title: "Tugas & Kuis", url: "/pages/tasks", icon: FileText },
         { title: "Progress Belajar", url: "/pages/progress", icon: Rocket },
         { title: "Leaderboard", url: "/pages/leaderboard", icon: Medal },
+        { title: "Leaderboard SMK Pesat", url: "/pages/mentoraxpesat", icon: School },
       ],
     },
     {

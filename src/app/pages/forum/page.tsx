@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Layout from "@/components/layout";
 import { useAuth } from "@/lib/useAuth";
 import { db } from "@/lib/firebase";
@@ -44,49 +44,54 @@ export default function ForumDiscuss() {
   const [lastVisible, setLastVisible] = useState<Timestamp | null>(null);
   const [hasMore, setHasMore] = useState(true);
 
-  const fetchPosts = async (initial = false) => {
-    if (loading) return;
-    setLoading(true);
+  const fetchPosts = useCallback(
+    async (initial = false) => {
+      if (loading) return;
+      setLoading(true);
 
-    try {
-      const q = initial
-        ? query(collection(db, "forumPosts"), orderBy("createdAt", "desc"), limit(5))
-        : query(
-            collection(db, "forumPosts"),
-            orderBy("createdAt", "desc"),
-            startAfter(lastVisible),
-            limit(5)
-          );
+      try {
+        const q = initial
+          ? query(collection(db, "forumPosts"), orderBy("createdAt", "desc"), limit(5))
+          : query(
+              collection(db, "forumPosts"),
+              orderBy("createdAt", "desc"),
+              startAfter(lastVisible),
+              limit(5)
+            );
 
-      const snapshot = await getDocs(q);
-      const fetched = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as ForumPost[];
+        const snapshot = await getDocs(q);
+        const fetched = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as ForumPost[];
 
-      if (fetched.length < 5) setHasMore(false);
-      if (fetched.length > 0) setLastVisible(fetched[fetched.length - 1].createdAt);
+        if (fetched.length < 5) setHasMore(false);
+        if (fetched.length > 0) setLastVisible(fetched[fetched.length - 1].createdAt);
 
-      setPosts((prev) => (initial ? fetched : [...prev, ...fetched]));
+        setPosts((prev) => (initial ? fetched : [...prev, ...fetched]));
 
-      const uids = Array.from(new Set(fetched.map((p) => p.userId)));
-      const profileMap: Record<string, UserProfile> = {};
-      await Promise.all(
-        uids.map(async (uid) => {
-          if (!profiles[uid]) {
-            const userRef = doc(db, "users", uid);
-            const userSnap = await getDoc(userRef);
-            if (userSnap.exists()) profileMap[uid] = userSnap.data() as UserProfile;
-          }
-        })
-      );
-      setProfiles((prev) => ({ ...prev, ...profileMap }));
-    } catch {
-      toast.error("Gagal memuat postingan.");
-    } finally {
-      setLoading(false);
-    }
-  };
+        const uids = Array.from(new Set(fetched.map((p) => p.userId)));
+        const profileMap: Record<string, UserProfile> = {};
+        await Promise.all(
+          uids.map(async (uid) => {
+            if (!profiles[uid]) {
+              const userRef = doc(db, "users", uid);
+              const userSnap = await getDoc(userRef);
+              if (userSnap.exists()) {
+                profileMap[uid] = userSnap.data() as UserProfile;
+              }
+            }
+          })
+        );
+        setProfiles((prev) => ({ ...prev, ...profileMap }));
+      } catch {
+        toast.error("Gagal memuat postingan.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [loading, lastVisible, profiles]
+  );
 
   const handlePostSubmit = async () => {
     if (!newPost.trim()) return;
@@ -100,7 +105,7 @@ export default function ForumDiscuss() {
       });
       setNewPost("");
       toast.success("Postingan berhasil dikirim!");
-      fetchPosts(true); // reload awal
+      fetchPosts(true); // Reload awal
     } catch {
       toast.error("Gagal mengirim postingan.");
     } finally {
@@ -110,7 +115,7 @@ export default function ForumDiscuss() {
 
   useEffect(() => {
     fetchPosts(true);
-  }, []);
+  }, [fetchPosts]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -123,9 +128,10 @@ export default function ForumDiscuss() {
         fetchPosts();
       }
     };
+
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [loading, hasMore, posts]);
+  }, [fetchPosts, loading, hasMore, posts]);
 
   return (
     <Layout pageTitle="Forum Diskusi">
