@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://mentora.smkpesat.sch.id'),
-  title: 'Mentora x Pesat - Platform Pembelajaran Coding Online',
+  title: 'Mentora x Pesat',
   description: 'Mentora adalah platform pembelajaran coding online dengan sistem modular yang dirancang untuk kalian yang ingin belajar coding dengan metode gamified. Dengan berbagai materi pembelajaran yang lengkap dan mudah diakses, Mentora menyediakan pengalaman belajar yang menyenangkan dan efektif.',
   keywords: 'Mentora, SMK Pesat, pembelajaran online, elearning smk pesat, kursus online smk pesat, platform pembelajaran, materi pembelajaran, video tutorial, resources pendidikan, e-learning, pendidikan digital, sekolah menengah kejuruan, SMK Pesat, platform edukasi, pembelajaran digital, kursus online, materi pendidikan, video pembelajaran, resources smk pesat, belajar coding, belajar desain grafis, belajar multimedia, belajar bisnis, belajar teknologi informasi, coding, desain grafis, multimedia, bisnis, teknologi informasi, belajar coding online, belajar desain grafis online, belajar multimedia online, belajar bisnis online, belajar teknologi informasi online, coding online, desain grafis online, multimedia online, bisnis online, teknologi informasi online',
   alternates: {
@@ -49,6 +49,51 @@ export const metadata: Metadata = {
     ],
     locale: 'id_ID',
     type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Mentora x SMK Pesat',
+    description: 'Platform E-Learning Resmi Mentora',
+    images: ['/logo.png'],
+    creator: '@smkpesat',
+  },
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+    shortcut: '/favicon-32x32.png',
+    other: [
+      {
+        rel: 'mask-icon',
+        url: '/safari-pinned-tab.svg',
+        color: '#5bbad5',
+      },
+    ],
+  },
+  themeColor: '#ffffff',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    title: 'Mentora x SMK Pesat',
+    statusBarStyle: 'default',
+    startupImage: [
+      {
+        url: '/apple-touch-startup-image-640x1136.png',
+        media: '(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)',
+      },
+      {
+        url: '/apple-touch-startup-image-750x1334.png',
+        media: '(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)',
+      },
+      {
+        url: '/apple-touch-startup-image-1242x2208.png',
+        media: '(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)',
+      },
+    ],
+  },
+  formatDetection: {
+    telephone: false,
+    address: false,
+    email: false,
   },
 };
 

@@ -32,6 +32,7 @@ import {
   Menu,
   X,
   FilePlus2,
+  School2,
 } from "lucide-react";
 
 // Sidebar menu structure
@@ -55,6 +56,7 @@ const sidebarMenu = [
     title: "Fitur",
     items: [
       { name: "Leaderboard", icon: <Award size={18} />, href: "/admin/leaderboard" },
+      { name: "SMK Pesat", icon: <School2 size={18} />, href: "/admin/mentorapesat" },
       { name: "Sertifikat", icon: <UserCheck size={18} />, href: "/admin/certificates" },
       { name: "Feedback", icon: <MessageCircle size={18} />, href: "/admin/feedback" },
     ],
