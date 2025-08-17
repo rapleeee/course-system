@@ -71,9 +71,9 @@ export default function Mentorapesat() {
   const [kelasFilter, setKelasFilter] = useState<string>("ALL");
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const siswaRef = collection(db, "siswa");
 
   useEffect(() => {
+      const siswaRef = collection(db, "siswa"); // ✅ lokal
     // real-time leaderboard, ordered by bintang desc then createdAt asc for stability
     const q = fsQuery(
       siswaRef,
@@ -113,12 +113,12 @@ export default function Mentorapesat() {
     }
     setIsAdding(true);
     try {
-      await addDoc(siswaRef, {
-        nama: namaBaru.trim(),
-        kelas: kelasBaru.trim(),
-        bintang: 0,
-        createdAt: serverTimestamp(),
-      });
+     await addDoc(collection(db, "siswa"), {
+  nama: namaBaru.trim(),
+  kelas: kelasBaru.trim(),
+  bintang: 0,
+  createdAt: serverTimestamp(),
+});
       setNamaBaru("");
       setKelasBaru("");
       toast.success("Siswa ditambahkan.");
