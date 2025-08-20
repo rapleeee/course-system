@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "types": [],          // biarkan kosong (biar auto-include dari include)
     "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
@@ -11,6 +12,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "typeRoots": ["./node_modules/@types", "./src/types"],
     "jsx": "preserve",
     "incremental": true,
     "plugins": [

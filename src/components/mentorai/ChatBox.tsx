@@ -33,7 +33,7 @@ export default function ChatBox({ chatList }: ChatBoxProps) {
 
       {/* Chat Conversation List - Only Visible When Open */}
       {isOpen && (
-        <div className="fixed bottom-16 right-4 bg-white shadow-lg rounded-lg w-64 p-4">
+        <div className="fixed bottom-16 right-4 border shadow-lg rounded-lg w-64 p-4">
           <h3 className="font-semibold text-sm">
             <Construction size={20} className="inline mr-2" color="orange"/>
             Sorry we are still working on this feature

@@ -71,9 +71,8 @@ export default function Mentorapesat() {
   const [kelasFilter, setKelasFilter] = useState<string>("ALL");
   const [busyId, setBusyId] = useState<string | null>(null);
 
-
   useEffect(() => {
-      const siswaRef = collection(db, "siswa"); // ✅ lokal
+    const siswaRef = collection(db, "siswa"); // ✅ lokal
     // real-time leaderboard, ordered by bintang desc then createdAt asc for stability
     const q = fsQuery(
       siswaRef,
@@ -113,12 +112,12 @@ export default function Mentorapesat() {
     }
     setIsAdding(true);
     try {
-     await addDoc(collection(db, "siswa"), {
-  nama: namaBaru.trim(),
-  kelas: kelasBaru.trim(),
-  bintang: 0,
-  createdAt: serverTimestamp(),
-});
+      await addDoc(collection(db, "siswa"), {
+        nama: namaBaru.trim(),
+        kelas: kelasBaru.trim(),
+        bintang: 0,
+        createdAt: serverTimestamp(),
+      });
       setNamaBaru("");
       setKelasBaru("");
       toast.success("Siswa ditambahkan.");
@@ -187,7 +186,8 @@ export default function Mentorapesat() {
               <Trophy className="h-7 w-7" /> Leaderboard SMK PESAT
             </h1>
             <p className="text-sm text-muted-foreground flex items-center gap-2">
-              <Users className="h-4 w-4" /> Total peserta: <span className="font-medium">{siswa.length}</span>
+              <Users className="h-4 w-4" /> Total peserta:{" "}
+              <span className="font-medium">{siswa.length}</span>
             </p>
           </div>
 
@@ -282,8 +282,12 @@ export default function Mentorapesat() {
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0 flex-1">
-                      <CardTitle className="truncate leading-tight">{s.nama}</CardTitle>
-                      <p className="text-sm text-muted-foreground truncate">Kelas: {s.kelas}</p>
+                      <CardTitle className="truncate leading-tight">
+                        {s.nama}
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground truncate">
+                        Kelas: {s.kelas}
+                      </p>
                     </div>
                     <div className="flex items-center gap-1 text-base font-semibold whitespace-nowrap">
                       <Star className="h-5 w-5" /> {s.bintang ?? 0}
