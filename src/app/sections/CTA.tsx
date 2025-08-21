@@ -1,7 +1,8 @@
-"use client"
-import { motion } from "framer-motion"
-import { ArrowRight, Phone, Clock } from "lucide-react"
-import { Button } from "@/components/ui/button"
+"use client";
+import { motion } from "framer-motion";
+import { ArrowRight, Phone, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function CTASection() {
   return (
@@ -18,8 +19,9 @@ export default function CTASection() {
               Siap Untuk Memulai Perjalananmu?
             </h2>
             <p className="text-white/90 text-lg leading-relaxed">
-              Bergabung dengan siswa lainnya dan mulai persiapkan masa depanmu bersama Mentora. 
-              Dapatkan bimbingan terbaik dari mentor berpengalaman dan akses ke materi pembelajaran berkualitas.
+              Bergabung dengan siswa lainnya dan mulai persiapkan masa depanmu
+              bersama Mentora. Dapatkan bimbingan terbaik dari mentor
+              berpengalaman dan akses ke materi pembelajaran berkualitas.
             </p>
           </motion.div>
 
@@ -29,20 +31,29 @@ export default function CTASection() {
             transition={{ duration: 0.5 }}
             className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto"
           >
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="bg-white text-[#1B3C53] hover:bg-[#F9F3EF] shadow-lg font-semibold"
             >
-              Mulai Sekarang
-              <ArrowRight className="w-5 h-5 ml-2" />
+              <Link href={"/auth/login"} className="flex items-center">
+                Mulai Sekarang
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Link>
             </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
+            <Button
+              size="lg"
+              variant="outline"
               className=" text-[#1B3C53] dark:text-[#F9F3EF] hover:bg-[#F9F3EF] font-semibold"
             >
-              <Phone className="w-5 h-5 mr-2" />
-              Konsultasi Gratis
+              <Link
+                href="https://wa.me/6282136166298?text=Mau%20konsultasi%20gratis%20tentang%20Mentora%20nih!"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center"
+              >
+                <Phone className="w-5 h-5 mr-2" />
+                Konsultasi Gratis
+              </Link>
             </Button>
           </motion.div>
         </div>
@@ -56,14 +67,14 @@ export default function CTASection() {
           {[
             {
               text: "Akses Seumur Hidup",
-              icon: <Clock className="w-5 h-5" />
+              icon: <Clock className="w-5 h-5" />,
             },
             {
               text: "Dukungan 24/7",
-              icon: <Phone className="w-5 h-5" />
-            }
+              icon: <Phone className="w-5 h-5" />,
+            },
           ].map((feature, index) => (
-            <div 
+            <div
               key={index}
               className="flex items-center justify-center gap-2 px-6 py-4 bg-white/10 backdrop-blur-sm rounded-xl text-white font-medium border border-white/10"
             >
@@ -74,5 +85,5 @@ export default function CTASection() {
         </motion.div>
       </div>
     </section>
-  )
+  );
 }

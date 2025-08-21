@@ -154,7 +154,6 @@ export default function DashboardPage() {
   return (
     <Layout pageTitle="Dashboard">
       <main className="space-y-8">
-        {/* HERO */}
         <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
@@ -190,8 +189,6 @@ export default function DashboardPage() {
             </div>
           </div>
         </section>
-
-        {/* STATS */}
         <section className="space-y-6">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <CardDashboard count={totalKelas} title="Total Kelas" />
@@ -199,12 +196,10 @@ export default function DashboardPage() {
             <CardDashboard count={totalSertifikat} title="Sertifikat" />
           </div>
         </section>
-
-        {/* KELAS SAYA */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Kelas Saya</h2>
-            <Link href="/courses" className="text-sm text-blue-600 hover:underline dark:text-blue-400">
+            <Link href="/pages/courses" className="text-sm text-blue-600 hover:underline dark:text-blue-400">
               Lihat semua
             </Link>
           </div>

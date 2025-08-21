@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Layout from "@/components/layout";
 import { useAuth } from "@/lib/useAuth";
 import { db } from "@/lib/firebase";
@@ -16,6 +16,7 @@ import {
   getDoc,
   limit,
   startAfter,
+  QueryDocumentSnapshot,
 } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,101 +38,141 @@ export type UserProfile = {
 
 export default function ForumDiscuss() {
   const { user } = useAuth();
+
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [profiles, setProfiles] = useState<Record<string, UserProfile>>({});
   const [newPost, setNewPost] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [lastVisible, setLastVisible] = useState<Timestamp | null>(null);
+
+  const [isFetching, setIsFetching] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
+
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot | null>(null);
   const [hasMore, setHasMore] = useState(true);
+
+  // guard agar scroll handler tak nge-spam fetch
+  const fetchingRef = useRef(false);
+
+  const fetchProfilesFor = useCallback(
+    async (uids: string[]) => {
+      const missing = uids.filter((u) => !profiles[u]);
+      if (missing.length === 0) return;
+
+      const profileMap: Record<string, UserProfile> = {};
+      await Promise.all(
+        missing.map(async (uid) => {
+          const userRef = doc(db, "users", uid);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+            profileMap[uid] = userSnap.data() as UserProfile;
+          }
+        })
+      );
+      setProfiles((prev) => ({ ...prev, ...profileMap }));
+    },
+    [profiles]
+  );
 
   const fetchPosts = useCallback(
     async (initial = false) => {
-      if (loading) return;
-      setLoading(true);
+      if (isFetching || fetchingRef.current) return;
+      if (!hasMore && !initial) return;
 
       try {
-        const q = initial
-          ? query(collection(db, "forumPosts"), orderBy("createdAt", "desc"), limit(5))
-          : query(
-              collection(db, "forumPosts"),
-              orderBy("createdAt", "desc"),
-              startAfter(lastVisible),
-              limit(5)
-            );
+        setIsFetching(true);
+        fetchingRef.current = true;
 
+        const base = query(
+          collection(db, "forumPosts"),
+          orderBy("createdAt", "desc"),
+          limit(5)
+        );
+
+        const q = initial || !lastDoc ? base : query(base, startAfter(lastDoc));
         const snapshot = await getDocs(q);
-        const fetched = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
+
+        // mapping post
+        const fetched = snapshot.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as Omit<ForumPost, "id">),
         })) as ForumPost[];
 
-        if (fetched.length < 5) setHasMore(false);
-        if (fetched.length > 0) setLastVisible(fetched[fetched.length - 1].createdAt);
+        // update cursor & hasMore
+        setLastDoc(
+          snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null
+        );
+        setHasMore(snapshot.docs.length === 5);
 
+        // set posts
         setPosts((prev) => (initial ? fetched : [...prev, ...fetched]));
 
+        // fetch profiles yang belum ada
         const uids = Array.from(new Set(fetched.map((p) => p.userId)));
-        const profileMap: Record<string, UserProfile> = {};
-        await Promise.all(
-          uids.map(async (uid) => {
-            if (!profiles[uid]) {
-              const userRef = doc(db, "users", uid);
-              const userSnap = await getDoc(userRef);
-              if (userSnap.exists()) {
-                profileMap[uid] = userSnap.data() as UserProfile;
-              }
-            }
-          })
-        );
-        setProfiles((prev) => ({ ...prev, ...profileMap }));
-      } catch {
+        await fetchProfilesFor(uids);
+      } catch (e) {
+        console.error(e);
         toast.error("Gagal memuat postingan.");
       } finally {
-        setLoading(false);
+        setIsFetching(false);
+        fetchingRef.current = false;
       }
     },
-    [loading, lastVisible, profiles]
+    [isFetching, hasMore, lastDoc, fetchProfilesFor]
   );
 
   const handlePostSubmit = async () => {
-    if (!newPost.trim()) return;
+    if (!user) {
+      toast.error("Silakan login terlebih dahulu.");
+      return;
+    }
+    const content = newPost.trim();
+    if (!content) return;
 
     try {
-      setLoading(true);
-      await addDoc(collection(db, "forumPosts"), {
-        content: newPost.trim(),
-        userId: user?.uid,
+      setIsPosting(true);
+
+      const ref = await addDoc(collection(db, "forumPosts"), {
+        content,
+        userId: user.uid,
         createdAt: serverTimestamp(),
       });
+
+      const optimistic: ForumPost = {
+        id: ref.id,
+        content,
+        userId: user.uid,
+        createdAt: Timestamp.now(),
+      };
+      setPosts((prev) => [optimistic, ...prev]);
       setNewPost("");
+      setLastDoc(null);
+      setHasMore(true);
+      fetchPosts(true);
+
       toast.success("Postingan berhasil dikirim!");
-      fetchPosts(true); // Reload awal
-    } catch {
+    } catch (e) {
+      console.error(e);
       toast.error("Gagal mengirim postingan.");
     } finally {
-      setLoading(false);
+      setIsPosting(false);
     }
   };
 
   useEffect(() => {
     fetchPosts(true);
-  }, [fetchPosts]);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
-      if (
-        window.innerHeight + window.scrollY >= document.body.offsetHeight - 300 &&
-        !loading &&
-        hasMore &&
-        posts.length >= 5
-      ) {
-        fetchPosts();
+      const nearBottom =
+        window.innerHeight + window.scrollY >= document.body.offsetHeight - 300;
+      if (nearBottom && !isFetching && hasMore && posts.length >= 5) {
+        fetchPosts(false);
       }
     };
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [fetchPosts, loading, hasMore, posts]);
+  }, [fetchPosts, isFetching, hasMore, posts.length]);
 
   return (
     <Layout pageTitle="Forum Diskusi">
@@ -143,14 +184,20 @@ export default function ForumDiscuss() {
               value={newPost}
               onChange={(e) => setNewPost(e.target.value)}
             />
-            <Button className="mt-3 w-full" onClick={handlePostSubmit} disabled={loading}>
-              {loading ? "Mengirim..." : "Kirim"}
+            <Button
+              className="mt-3 w-full"
+              onClick={handlePostSubmit}
+              disabled={isPosting}
+            >
+              {isPosting ? "Mengirim..." : "Kirim"}
             </Button>
           </div>
         )}
 
-        {posts.length === 0 && !loading && (
-          <p className="text-center text-gray-500 text-sm">Belum ada diskusi apapun di sini.</p>
+        {posts.length === 0 && !isFetching && (
+          <p className="text-center text-gray-500 text-sm">
+            Belum ada diskusi apapun di sini.
+          </p>
         )}
 
         {posts.map((post) => (
@@ -158,12 +205,20 @@ export default function ForumDiscuss() {
             key={post.id}
             post={post}
             profile={profiles[post.userId]}
-            onDeleted={() => fetchPosts(true)}
-            onRefresh={() => fetchPosts(true)}
+            onDeleted={async () => {
+              setLastDoc(null);
+              setHasMore(true);
+              await fetchPosts(true);
+            }}
+            onRefresh={async () => {
+              setLastDoc(null);
+              setHasMore(true);
+              await fetchPosts(true);
+            }}
           />
         ))}
 
-        {loading && (
+        {(isFetching || isPosting) && (
           <div className="flex justify-center py-4">
             <Loader2 className="animate-spin w-6 h-6 text-muted-foreground" />
           </div>
