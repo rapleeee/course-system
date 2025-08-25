@@ -179,7 +179,6 @@ export default function Mentorapesat() {
   return (
     <AdminLayout>
       <div className="mx-auto max-w-6xl p-6 space-y-6">
-        {/* Header */}
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div className="space-y-1">
             <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
@@ -190,8 +189,6 @@ export default function Mentorapesat() {
               <span className="font-medium">{siswa.length}</span>
             </p>
           </div>
-
-          {/* Search + Filter */}
           <div className="flex w-full md:w-auto items-center gap-2">
             <div className="relative w-full md:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -215,8 +212,6 @@ export default function Mentorapesat() {
             </select>
           </div>
         </div>
-
-        {/* Tambah Siswa */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-xl">
@@ -256,8 +251,6 @@ export default function Mentorapesat() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Leaderboard List */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map((s, i) => {
             const rank = i + 1;
@@ -275,21 +268,25 @@ export default function Mentorapesat() {
                   <Badge className={rankStyle}>{`#${rank}`}</Badge>
                 </div>
                 <CardHeader className="pb-2">
-                  <div className="flex items-center gap-3">
+                  <div className="grid grid-cols-[auto,1fr,auto] items-center gap-3">
                     <Avatar className="h-10 w-10 shrink-0">
                       <AvatarFallback className="text-sm font-semibold">
                         {initials(s.nama)}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <CardTitle className="truncate leading-tight">
+                    <div className="min-w-0">
+                      <CardTitle
+                        className="truncate leading-tight"
+                        title={s.nama} 
+                      >
                         {s.nama}
                       </CardTitle>
                       <p className="text-sm text-muted-foreground truncate">
-                        Kelas: {s.kelas}
+                        {s.kelas}
                       </p>
                     </div>
-                    <div className="flex items-center gap-1 text-base font-semibold whitespace-nowrap">
+
+                    <div className="shrink-0 flex items-center gap-1 text-base font-semibold whitespace-nowrap">
                       <Star className="h-5 w-5" /> {s.bintang ?? 0}
                     </div>
                   </div>
