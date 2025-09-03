@@ -35,8 +35,9 @@ export default function HeroSection() {
             className="mt-8 max-w-3xl"
           >
             <p className="text-center text-lg sm:text-xl text-gray-600 dark:text-gray-300">
-              Mentora adalah platform belajar coding menyenangkan dan mudah 
-              dengan sistem modular dan gamifikasi. Program utama kami adalah<span className="font-bold bg-[#D2C1B6] dark:bg-[#1B3C53] rounded-lg px-2 text-[#1B3C53] dark:text-[#D2C1B6]">Kelas TaCo</span>, bakalan ngebimbing kamu dari baris code pertama sampai jadi programmer yang siap kerja. 
+              Mentora adalah platform belajar coding menyenangkan dan mudah, berkolaborasi dengan <span className="font-semibold">SMK Pesat</span>,
+              dengan sistem modular dan gamifikasi. Program utama kami adalah <span className="font-bold bg-[#D2C1B6] dark:bg-[#1B3C53] rounded-lg px-2 text-[#1B3C53] dark:text-[#D2C1B6]">Kelas TaCo</span>,
+              yang ngebimbing kamu dari baris kode pertama sampai siap kerja. 
             </p>
           </motion.div>
 

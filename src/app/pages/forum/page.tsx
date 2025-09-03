@@ -157,9 +157,12 @@ export default function ForumDiscuss() {
     }
   };
 
+  const didInitRef = useRef(false);
   useEffect(() => {
+    if (didInitRef.current) return;
+    didInitRef.current = true;
     fetchPosts(true);
-  }, []);
+  }, [fetchPosts]);
 
   useEffect(() => {
     const handleScroll = () => {

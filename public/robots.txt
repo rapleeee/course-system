@@ -1,3 +1,11 @@
 User-agent: *
 Allow: /
+# Blokir area admin dan halaman privat
+Disallow: /admin/
+Disallow: /pages/dashboard
+Disallow: /pages/settings
+Disallow: /pages/progress
+Disallow: /pages/tasks
+Disallow: /pages/leaderboard
+
 Sitemap: https://mentora.smkpesat.sch.id/sitemap.xml
