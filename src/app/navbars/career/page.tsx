@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Navbar from "@/components/layouts/Navbar";
-import { ArrowRightCircleIcon, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowRightCircle, ChevronDown, ChevronUp } from "lucide-react";
 import Image from "next/image";
 
 export default function Recruitment() {
@@ -37,7 +37,7 @@ export default function Recruitment() {
       linkwebsite: "https://docs.google.com/forms/d/e/1FAIpQLSfNaNUMYwEVNP1FMUYgdA8r7RHFIGuv0on8bwyBAumfh6SxFw/viewform"
     },
     {
-      title: "Design and publication",
+      title: "Design and Publication",
       description: "Helps us create and manage our design and publication needs for social media and other platforms.",
       responsibilities: [
         "Create visually appealing designs for social media",
@@ -55,73 +55,94 @@ export default function Recruitment() {
       linkwebsite: "https://docs.google.com/forms/d/e/1FAIpQLSeCLzS4bjdkwaUzbgPNA-T-IrahM_AvJRCokIexeXCPKak3GA/viewform"
     },
   ];
-const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const toggleAccordion = (index: number) => {
-  setOpenIndex(openIndex === index ? null : index);
-};
+    setOpenIndex((prev) => (prev === index ? null : index));
+  };
 
   return (
     <>
       <Navbar />
       <div className="min-h-screen mt-24 flex flex-col items-center px-6 md:px-10">
         <div className="max-w-5xl w-full text-left sm:text-center">
-          <h1 className="text-3xl sm:text-5xl font-bold ">
-            <span className="text-[#1d857c] bg-[#f5bb64] p-1 ">WE LOOK FORWARD </span> TO
-            COLLABORATING WITH TALENTED INDIVIDUALS.
+          <h1 className="mt-3 text-3xl sm:text-5xl font-extrabold tracking-tight">
+            <span className="text-[#1d857c] bg-[#f5bb64] px-1 py-0.5">Join Our Team</span> — Collaborate with talented individuals
           </h1>
-          <p className="text-neutral-400 text-lg sm:text-2xl mt-6">
-            Lets level up together and join us during our next recruitment.
+          <p className="text-neutral-300 text-base sm:text-lg mt-4">
+            Level up with us. Explore open roles and apply in minutes.
           </p>
-          <div>
+          <div className="mt-6">
             <Image
               src="/photos/progammer.webp"
-              alt="Recruitment Image"
-              width={600}
-              height={400}
-              className="rounded-lg shadow-md w-full h-100 object-cover mt-6"
+              alt="Team collaborating on a web project"
+              width={1200}
+              height={600}
+              sizes="(max-width: 768px) 100vw, 800px"
+              className="rounded-xl shadow-lg w-full h-auto object-cover"
+              priority
             />
           </div>
         </div>
 
-        <div className="max-w-5xl w-full my-10 space-y-6">
-          {jobs.map((job, index) => (
-            <div key={index} className="bg-neutral-700 shadow-lg rounded-xl overflow-hidden">
-              <button
-                className="w-full text-left p-6 flex justify-between items-center text-neutral-800 font-semibold text-xl"
-                onClick={() => toggleAccordion(index)}
-              >
-                <span className="text-white"> <span></span> {job.title}</span>
-                {openIndex === index ? (
-                  <ChevronUp className="text-white" />
-                ) : (
-                  <ChevronDown className="text-white" />
-                )}
-              </button>
-              {openIndex === index && (
-                <div className="p-6 bg-neutral-700 text-neutral-100">
-                  <p className="text-base font-medium text-neutral-100">{job.description}</p>
-                  <h3 className="text-base font-semibold mt-3">Responsibilities:</h3>
-                  <ul className="list-disc pl-5 text-sm mt-2 text-neutral-100">
-                    {job.responsibilities.map((responsibility, i) => (
-                      <li key={i}>{responsibility}</li>
-                    ))}
-                  </ul>
-                  <div className="">
-                    <a href={job.linkwebsite} target="_blank" rel="noopener noreferrer">
-                      <button className="border py-1 px-4 mt-3 hover:bg-[#f5bb64] rounded-lg ">
-                        <div className="flex items-center gap-4">
-                        <span className="text-white text-sm">Apply Now </span>
-                        <ArrowRightCircleIcon className="text-white text-xs" />
-                        </div>
+        <section className="max-w-5xl w-full my-10" aria-labelledby="jobs-heading">
+          <h2 id="jobs-heading" className="sr-only">Open Positions</h2>
+          <ul className="space-y-4">
+            {jobs.map((job, index) => {
+              const isOpen = openIndex === index;
+              const buttonId = `job-accordion-button-${index}`;
+              const panelId = `job-accordion-panel-${index}`;
+              return (
+                <li key={job.title}>
+                  <article className="rounded-xl border border-neutral-700/60 bg-neutral-800/60 backdrop-blur-sm shadow-md overflow-hidden">
+                    <header>
+                      <button
+                        id={buttonId}
+                        className="w-full text-left p-5 sm:p-6 flex justify-between items-center font-semibold text-lg sm:text-xl text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#f5bb64] focus-visible:ring-offset-neutral-900 transition-colors"
+                        onClick={() => toggleAccordion(index)}
+                        aria-expanded={isOpen}
+                        aria-controls={panelId}
+                      >
+                        <span className="pr-3">{job.title}</span>
+                        {isOpen ? (
+                          <ChevronUp aria-hidden className="text-neutral-300" />
+                        ) : (
+                          <ChevronDown aria-hidden className="text-neutral-300" />
+                        )}
                       </button>
-                    </a>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+                    </header>
+                    <div
+                      id={panelId}
+                      role="region"
+                      aria-labelledby={buttonId}
+                      className={`${isOpen ? 'block' : 'hidden'} p-5 sm:p-6 border-t border-neutral-700/60 text-neutral-100`}
+                    >
+                      <p className="text-base font-medium">{job.description}</p>
+                      <h3 className="text-sm font-semibold mt-4">Responsibilities</h3>
+                      <ul className="list-disc pl-5 text-sm mt-2 space-y-1 text-neutral-200">
+                        {job.responsibilities.map((responsibility, i) => (
+                          <li key={`${job.title}-resp-${i}`}>{responsibility}</li>
+                        ))}
+                      </ul>
+                      <div className="mt-4">
+                        <a
+                          href={job.linkwebsite}
+                          target="_blank"
+                          rel="noopener noreferrer nofollow external"
+                          aria-label={`Apply now for ${job.title}`}
+                          className="inline-flex items-center gap-2 rounded-lg border border-[#f5bb64] px-4 py-2 text-sm font-semibold text-white hover:bg-[#f5bb64] hover:text-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f5bb64] focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900 transition-colors"
+                        >
+                          <span>Apply Now</span>
+                          <ArrowRightCircle aria-hidden className="h-4 w-4" />
+                        </a>
+                      </div>
+                    </div>
+                  </article>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       </div>
     </>
   );

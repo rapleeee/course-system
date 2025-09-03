@@ -15,9 +15,14 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://mentora.smkpesat.sch.id'),
-  title: 'Mentora x Pesat',
-  description: 'Mentora adalah platform pembelajaran coding online dengan sistem modular yang dirancang untuk kalian yang ingin belajar coding dengan metode gamified. Dengan berbagai materi pembelajaran yang lengkap dan mudah diakses, Mentora menyediakan pengalaman belajar yang menyenangkan dan efektif.',
-  keywords: 'Mentora, SMK Pesat, pembelajaran online, elearning smk pesat, kursus online smk pesat, platform pembelajaran, materi pembelajaran, video tutorial, resources pendidikan, e-learning, pendidikan digital, sekolah menengah kejuruan, SMK Pesat, platform edukasi, pembelajaran digital, kursus online, materi pendidikan, video pembelajaran, resources smk pesat, belajar coding, belajar desain grafis, belajar multimedia, belajar bisnis, belajar teknologi informasi, coding, desain grafis, multimedia, bisnis, teknologi informasi, belajar coding online, belajar desain grafis online, belajar multimedia online, belajar bisnis online, belajar teknologi informasi online, coding online, desain grafis online, multimedia online, bisnis online, teknologi informasi online',
+  title: {
+    default: 'Mentora SMK Pesat',
+    template: '%s | Mentora SMK Pesat',
+  },
+  description:
+    'Mentora SMK Pesat adalah platform pembelajaran coding online dengan sistem modular dan gamifikasi. Belajar pemrograman, desain, dan IT dengan kurikulum relevan industri di SMK Pesat.',
+  keywords:
+    'Mentora SMK Pesat, mentora smkpesat, pembelajaran online, e-learning SMK Pesat, kursus coding SMK, platform pembelajaran, belajar coding, belajar pemrograman, desain grafis, multimedia, teknologi informasi',
   alternates: {
     canonical: '/',
   },
@@ -33,13 +38,14 @@ export const metadata: Metadata = {
     },
   },
   verification: {
+    // Ganti dengan kode verifikasi Search Console yang valid
     google: 'tambahkan-kode-verifikasi-google-search-console-disini',
   },
   openGraph: {
-    title: 'Mentora x SMK Pesat',
-    description: 'Platform E-Learning Resmi Mentora',
+    title: 'Mentora SMK Pesat',
+    description: 'Platform E-Learning Resmi Mentora SMK Pesat',
     url: 'https://mentora.smkpesat.sch.id',
-    siteName: 'Mentora x SMK Pesat',
+    siteName: 'Mentora SMK Pesat',
     images: [
       {
         url: '/logo.png',
@@ -52,8 +58,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Mentora x SMK Pesat',
-    description: 'Platform E-Learning Resmi Mentora',
+    title: 'Mentora SMK Pesat',
+    description: 'Platform E-Learning Resmi Mentora SMK Pesat',
     images: ['/logo.png'],
     creator: '@smkpesat',
   },

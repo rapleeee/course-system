@@ -1,168 +1,153 @@
-"use client"
-import React from 'react'
-import { Quote } from 'lucide-react'
-import { motion } from 'framer-motion'
-import Navbar from '@/components/layouts/Navbar'
-import Image from 'next/image'
+"use client";
+import Navbar from "@/components/layouts/Navbar";
+import Image from "next/image";
+import Link from "next/link";
+import {
+  GraduationCap,
+  BadgeCheck,
+  Building2,
+  Code2,
+  Cpu,
+  Palette,
+  ArrowRightCircle,
+} from "lucide-react";
 
 export default function AboutPage() {
+  const tracks = [
+    {
+      title: "RPL (Rekayasa Perangkat Lunak)",
+      desc: "Fundamental hingga advanced untuk software engineering modern: web, API, dan best practice.",
+      Icon: Code2,
+    },
+    {
+      title: "TKJ (Teknik Komputer & Jaringan)",
+      desc: "Jaringan, server, cloud dasar, dan keamanan—siap pakai di industri.",
+      Icon: Cpu,
+    },
+    {
+      title: "DKV (Desain Komunikasi Visual)",
+      desc: "Branding, UI/UX dasar, motion & publikasi kreatif untuk sosial media.",
+      Icon: Palette,
+    },
+  ] as const;
+
+  const stats = [
+    { label: "Mentor tersertifikasi", value: "10+" },
+    { label: "Alumni terserap industri", value: "50+" },
+    { label: "Siswa aktif", value: "100+" },
+    { label: "Mitra industri", value: "10+" },
+  ] as const;
+
   return (
-    <section className="">
+    <>
       <Navbar />
-      <div className="max-w-7xl pt-4 mx-auto px-6 sm:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 justify-center items-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="col-span-1 p-6"
-          >
-            <h1>About us.</h1>
-            <h1>About team.</h1>
-            <h1>Education</h1>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="col-span-2 p-6"
-          >
-            <h1 className="text-4xl font-bold mb-4">ABOUT US.</h1>
-            <p className="text-sm sm:text-base text-justify mb-6">
-              We are a team of passionate individuals dedicated to creating innovative solutions. Our mission is to deliver <span className='text-[#1d857c] bg-[#f5bb64]'>high-quality Education</span> and services that drive positive change in the world.
-            </p>
-            <p className="text-sm sm:text-base text-justify mb-6">
-              Powered by continuous learning, we embrace challenges as opportunities for growth. We are not just a team, we are a community united by our values.
-              And we are committed to making a difference through our work. As a team, we believe in the power of collaboration and creativity to achieve our goals.
-              Together, we strive to push boundaries and exceed expectations, always aiming for excellence in everything we do.
-            </p>
-          </motion.div>
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className="mt-12 flex justify-center"
-        >
-          <Image
-            src="/photos/progammer.webp"
-            alt="About Us Image"
-            width={600}
-            height={400}
-            className="rounded-lg shadow-md w-full h-100 object-cover"
-          />
-        </motion.div>
-        <div className="mt-20">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.8 }}
-              className="space-y-4"
-            >
-              <p className="text-lg sm:text-xl">
-                After a fortunate encounter with copywriter and content manager Anna Scardovelli, Studio Marani gained another key member. Anna was already collaborating with big international brands like Barilla, Volkswagen, Campari, and others.
-              </p>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 1 }}
-                className="flex items-center gap-2"
-              >
-                <Quote size={24} className="text-[#f5bb64]" />
-                <span className="text-lg font-semibold text-neutral-400">
-                  “Our work does make sense only if it is a faithful witness of his time.” - Jean-Philippe Nuel, Director
-                </span>
-              </motion.div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 1.2 }}
-              className="flex justify-center"
-            >
-              <Image
-                src="/photos/working.jpg"
-                alt="Team working"
-                width={600}
-                height={400}
-                className="rounded-lg"
-              />
-            </motion.div>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-12 mt-24">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 1.4 }}
-          >
+      <div className="min-h-screen mt-16 flex flex-col items-center px-6 md:px-10">
+        <div className="max-w-5xl w-full text-left sm:text-center">
+          <h1 className="mt-3 text-3xl sm:text-5xl font-extrabold tracking-tight">
+            <span className="text-[#1d857c] bg-[#f5bb64] px-1 py-0.5">Mentora</span> — Platform Belajar Tech
+          </h1>
+          <p className="text-neutral-300 text-base sm:text-lg mt-4">
+            Mentora adalah platform belajar teknologi dengan fokus RPL, TKJ, dan DKV. Kami terafiliasi dengan SMK Pesat ITXPRO dan
+            didukung pengajar bersertifikasi untuk pembelajaran yang relevan dengan industri.
+          </p>
+          <div className="mt-6">
             <Image
               src="/photos/working.jpg"
-              alt="Team Image"
-              width={600}
-              height={400}
-              className="rounded-lg shadow-md mb-4"
+              alt="Sesi pembelajaran Mentora: mentor menjelaskan materi ke siswa"
+              width={1200}
+              height={600}
+              sizes="(max-width: 768px) 100vw, 800px"
+              className="rounded-xl shadow-lg w-full h-auto object-cover"
+              priority
             />
-          </motion.div>
-          <div>
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 1.6 }}
-              className="text-2xl sm:text-3xl font-bold mb-6"
-            >
-              The Team.
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 1.8 }}
-              className="text-lg sm:text-xl "
-            >
-              Our team is a diverse group of professionals with expertise in various fields, including design, development, marketing, and project management. We work collaboratively to bring innovative ideas to life and ensure the success of our projects.
-            </motion.p>
-
-            <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-6">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 2 }}
-              >
-                <h3 className="text-xl font-semibold">10</h3>
-                <p className="text-sm text-neutral-400">Mentor tervalidasi ketat oleh sistem kita</p>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 2.2 }}
-              >
-                <h3 className="text-xl font-semibold">50+</h3>
-                <p className="text-sm text-neutral-400">Alumni terserap di industri indonesia hingga luar negeri</p>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 2.4 }}
-              >
-                <h3 className="text-xl font-semibold">100+</h3>
-                <p className="text-sm text-neutral-400">Siswa aktif dan berkomunitas dengan sehat</p>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 2.6 }}
-              >
-                <h3 className="text-xl font-semibold">10+</h3>
-                <p className="text-sm text-neutral-400">Kerjasama dengan industri</p>
-              </motion.div>
-            </div>
           </div>
         </div>
+
+        <section className="max-w-5xl w-full my-10 grid md:grid-cols-5 gap-6" aria-labelledby="about-highlights">
+          <h2 id="about-highlights" className="sr-only">Sorotan Mentora</h2>
+          <div className="md:col-span-3 space-y-6">
+            <article className="rounded-xl border border-neutral-700/60 bg-neutral-800/60 backdrop-blur-sm shadow-md overflow-hidden">
+              <header className="px-5 sm:px-6 pt-5 sm:pt-6">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <GraduationCap aria-hidden className="h-5 w-5 text-[#f5bb64]" /> Pembelajaran Berbasis Industri
+                </h3>
+              </header>
+              <div className="p-5 sm:p-6 text-neutral-200">
+                <p>
+                  Kurikulum disusun praktis dan berjenjang, mengedepankan project-based learning serta pembiasaan workflow profesional
+                  agar siswa siap terjun ke dunia kerja atau melanjutkan studi.
+                </p>
+              </div>
+            </article>
+
+            <article className="rounded-xl border border-neutral-700/60 bg-neutral-800/60 backdrop-blur-sm shadow-md overflow-hidden">
+              <header className="px-5 sm:px-6 pt-5 sm:pt-6">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <Building2 aria-hidden className="h-5 w-5 text-[#f5bb64]" /> Afiliasi Resmi
+                </h3>
+              </header>
+              <div className="p-5 sm:p-6 text-neutral-200">
+                <p>
+                  Mentora terafiliasi dengan <span className="font-semibold text-white">SMK Pesat ITXPRO</span>, memperkuat ekosistem pembelajaran dan kesempatan kolaborasi
+                  dengan tenaga pendidik dan fasilitas sekolah.
+                </p>
+              </div>
+            </article>
+
+            <article className="rounded-xl border border-neutral-700/60 bg-neutral-800/60 backdrop-blur-sm shadow-md overflow-hidden">
+              <header className="px-5 sm:px-6 pt-5 sm:pt-6">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <BadgeCheck aria-hidden className="h-5 w-5 text-[#f5bb64]" /> Mentor Tersertifikasi
+                </h3>
+              </header>
+              <div className="p-5 sm:p-6 text-neutral-200">
+                <p>
+                  Pengajar berpengalaman dan tersertifikasi memastikan materi tepat sasaran, dengan bimbingan personal dan review berkala.
+                </p>
+              </div>
+            </article>
+          </div>
+
+          <aside className="md:col-span-2 space-y-4" aria-label="Statistik dan CTA">
+            <div className="grid grid-cols-2 gap-4">
+              {stats.map((s) => (
+                <div key={s.label} className="rounded-xl border border-neutral-700/60 bg-neutral-800/60 p-4">
+                  <div className="text-2xl font-bold text-white">{s.value}</div>
+                  <div className="text-xs text-neutral-400 mt-1">{s.label}</div>
+                </div>
+              ))}
+            </div>
+            <div>
+              <Link
+                href="/navbars/career"
+                className="inline-flex items-center gap-2 rounded-lg border border-[#f5bb64] px-4 py-2 text-sm font-semibold text-white hover:bg-[#f5bb64] hover:text-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f5bb64] focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900 transition-colors"
+                aria-label="Lihat peluang bergabung di Mentora"
+              >
+                Lihat Peluang — Careers
+                <ArrowRightCircle aria-hidden className="h-4 w-4" />
+              </Link>
+            </div>
+          </aside>
+        </section>
+
+        <section className="max-w-5xl w-full my-10" aria-labelledby="track-heading">
+          <h2 id="track-heading" className="text-2xl sm:text-3xl font-bold text-white mb-6 text-left sm:text-center">
+            Jalur Belajar Utama
+          </h2>
+          <ul className="grid md:grid-cols-3 gap-6">
+            {tracks.map(({ title, desc, Icon }) => (
+              <li key={title}>
+                <article className="h-full rounded-xl border border-neutral-700/60 bg-neutral-800/60 backdrop-blur-sm shadow-md p-5 sm:p-6">
+                  <div className="flex items-center gap-2 text-white font-semibold">
+                    <Icon aria-hidden className="h-5 w-5 text-[#f5bb64]" /> {title}
+                  </div>
+                  <p className="text-sm text-neutral-300 mt-2">{desc}</p>
+                </article>
+              </li>
+            ))}
+          </ul>
+        </section>
       </div>
-    </section>
-  )
+    </>
+  );
 }
