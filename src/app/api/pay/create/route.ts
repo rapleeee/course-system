@@ -12,7 +12,11 @@ export async function POST(req: NextRequest) {
     const { uid, name, email } = (await req.json()) as { uid: string; name?: string; email?: string };
     if (!uid) return NextResponse.json({ error: "Missing uid" }, { status: 400 });
 
-    const isProduction = (process.env.MIDTRANS_IS_PRODUCTION === "true") || false;
+    const parseBool = (v?: string | null) => {
+      const s = (v || "").trim().toLowerCase();
+      return ["true", "1", "yes", "on", "prod", "production"].includes(s);
+    };
+    const isProduction = parseBool(process.env.MIDTRANS_IS_PRODUCTION);
     const serverKey = process.env.MIDTRANS_SERVER_KEY;
     const clientKey = process.env.MIDTRANS_CLIENT_KEY;
     if (!serverKey || !clientKey) {
@@ -51,6 +55,29 @@ export async function POST(req: NextRequest) {
     } catch (e) {
       console.error("[pay/create] Firestore admin write failed", e);
     }
+    // Minimal logging untuk membantu debug mismatch env di Vercel (tanpa membocorkan secret)
+    try {
+      const snapUrl = process.env.NEXT_PUBLIC_MIDTRANS_SNAP_URL || "";
+      const frontIsProd = /app\.midtrans\.com/.test(snapUrl) && !/sandbox/.test(snapUrl);
+      const keyPrefix = serverKey.slice(0, 10);
+      const looksSandboxKey = serverKey.startsWith("SB-") || serverKey.includes("SB-Mid-server");
+      const looksProdKey = serverKey.startsWith("Mid-server-");
+      if (frontIsProd !== isProduction) {
+        console.warn("[pay/create] WARN mismatch frontend vs backend env:", { frontIsProd, isProduction });
+      }
+      if (isProduction && !looksProdKey) {
+        console.warn("[pay/create] WARN production mode but serverKey looks sandbox", { keyPrefix });
+      }
+      if (isProduction && looksSandboxKey) {
+        console.warn("[pay/create] WARN production mode and serverKey flagged as sandbox", { keyPrefix });
+      }
+      if (!isProduction && looksProdKey) {
+        console.warn("[pay/create] WARN sandbox mode but serverKey looks production", { keyPrefix });
+      }
+      if (!isProduction && !looksSandboxKey) {
+        console.warn("[pay/create] WARN sandbox mode and serverKey doesn't look sandbox", { keyPrefix });
+      }
+    } catch {}
 
     return NextResponse.json({ token, orderId });
   } catch (err) {

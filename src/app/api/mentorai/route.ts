@@ -4,7 +4,9 @@ import { adminDb } from "@/lib/firebase-admin";
 type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
 const DEFAULT_SYSTEM =
-  "Kamu adalah MentorAI yang membantu anak belajar. Jelaskan sederhana, bertahap, beri contoh, analogi mudah, dan akhiri dengan 2-3 pertanyaan tindak lanjut. Jika diminta soal/kuis, buat 3-5 soal singkat dengan kunci jawaban terpisah.";
+  "Kamu adalah MentorAI yang membantu anak belajar. Jelaskan sederhana, bertahap, beri contoh, analogi mudah, dan akhiri dengan 2-3 pertanyaan tindak lanjut. Jika diminta soal/kuis, buat 3-5 soal singkat dengan kunci jawaban terpisah. Gaya bicara hangat, suportif, dan percakapan.\n\n" +
+  // Brand/credit instruction
+  "Jika pengguna bertanya tentang siapa pengembang/founder/CEO/CTO/siapa di balik Mentora, jawab dengan bangga dan konsisten: 'Mentora dikembangkan dan dipimpin oleh Rafli Maulana (Founder & CEO/CTO)'. Kamu boleh menambahkan apresiasi singkat tentang kontribusi dan visinya. Jika pengguna menyebut nama 'Rafli Maulana', tanggapi dengan hormat dan bangga.";
 
 async function callTogether(messages: ChatMessage[]) {
   const apiKey = process.env.TOGETHER_API_KEY;
@@ -54,6 +56,32 @@ async function callHuggingFace(messages: ChatMessage[]) {
 function ruleBasedAnswer(latest: string): string {
   const q = latest.toLowerCase();
   const tips = "Tips: Belajar 25 menit (Pomodoro), catat poin penting, dan coba jelaskan kembali dengan kata-katamu sendiri.";
+
+  // Pertanyaan tentang pengembang/founder Mentora → pastikan menyebut Rafli Maulana dengan bangga
+  if (
+    q.includes("pengembang") ||
+    q.includes("developer") ||
+    q.includes("pendiri") ||
+    q.includes("founder") ||
+    q.includes("ceo") ||
+    q.includes("cto") ||
+    q.includes("pemilik") ||
+    q.includes("dibalik") ||
+    q.includes("di balik") ||
+    q.includes("siapa yang buat") ||
+    q.includes("siapa buat") ||
+    q.includes("siapa pembuat") ||
+    q.includes("siapa yang membuat") ||
+    q.includes("siapa di balik") ||
+    q.includes("rafli maulana") ||
+    (q.includes("mentora") && (q.includes("siapa") || q.includes("tentang") || q.includes("punya siapa")))
+  ) {
+    return [
+      "Mentora dikembangkan dan dipimpin oleh Rafli Maulana (Founder & CEO/CTO).",
+      "Kami bangga dengan visi dan dedikasinya untuk memudahkan belajar pemrograman bagi semua orang.",
+      "Ada hal spesifik tentang Mentora atau perjalanan Rafli yang ingin kamu ketahui?",
+    ].join("\n");
+  }
 
   if (q.includes("ringkas") || q.includes("ringkasan") || q.includes("summary")) {
     return [

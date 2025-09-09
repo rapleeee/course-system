@@ -17,7 +17,6 @@ import {
 import ChatBubble from "@/components/mentorai/ChatBubble";
 import ChatInput from "@/components/mentorai/ChatInput";
 import { Loader2 } from "lucide-react";
-import { generateLlamaResponse } from "@/lib/llamaClient";
 import Layout from "@/components/layout";
 
 export type ChatMessage = {
@@ -81,14 +80,20 @@ export default function MentorAIPage() {
     setIsLoading(true);
 
     try {
+      // Kirim seluruh riwayat percakapan (user+assistant) agar respons lebih kontekstual
       const historyMessages = [...allMessages, userMessage].map((msg) => ({
-        role: msg.role,
+        role: msg.role as "user" | "assistant",
         content: msg.content,
       }));
 
-      await new Promise((res) => setTimeout(res, 1200)); // Delay biar lebih natural
+      const res = await fetch("/api/mentorai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: historyMessages }),
+      });
 
-      const reply = await generateLlamaResponse(historyMessages);
+      const data = (await res.json()) as { reply?: string };
+      const reply = data.reply || "Maaf, aku belum bisa menjawab itu.";
 
       const aiMessage: ChatMessage = {
         content: reply,
