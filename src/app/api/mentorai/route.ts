@@ -1,4 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+
+// Ensure Node.js runtime (firebase-admin & external fetch compatibility)
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 import { adminDb } from "@/lib/firebase-admin";
 
 type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
