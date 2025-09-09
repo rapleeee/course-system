@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/useAuth";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, collection, getDocs, query, orderBy } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, query, orderBy, setDoc, serverTimestamp, arrayUnion, arrayRemove, type FieldValue } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import Layout from "@/components/layout";
 import Image from "next/image";
@@ -59,7 +59,7 @@ const renderChapterContent = (chapter: Chapter) => {
 
     case "pdf":
       return chapter.pdfUrl ? (
-        <div className="w-full h-[600px] rounded-lg overflow-hidden border border-gray-200">
+        <div className="w-full h-[600px] rounded-lg overflow-hidden border border-border bg-card">
           <iframe
             src={`${chapter.pdfUrl}#toolbar=0`}
             className="w-full h-full"
@@ -70,7 +70,7 @@ const renderChapterContent = (chapter: Chapter) => {
 
     case "module":
       return chapter.image ? (
-        <div className="relative w-full h-[400px]">
+        <div className="relative w-full h-[400px] bg-muted rounded-lg">
           <Image
             src={chapter.image}
             alt={chapter.title}
@@ -94,6 +94,38 @@ export default function CourseDetailPage() {
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [hasAccess, setHasAccess] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+
+  const handleToggleChapterCompleted = async (chapterId: string) => {
+    if (!user || !id) return;
+    const isCompleted = completedIds.has(chapterId);
+    // Optimistic update
+    setCompletedIds((prev) => {
+      const next = new Set(prev);
+      if (isCompleted) next.delete(chapterId);
+      else next.add(chapterId);
+      return next;
+    });
+    try {
+      await updateProgress(
+        db,
+        user.uid,
+        id as string,
+        chapterId,
+        isCompleted ? "remove" : "add",
+        { title: course?.title, imageUrl: course?.imageUrl }
+      );
+    } catch (err) {
+      console.error("Failed to update progress", err);
+      // Revert on failure
+      setCompletedIds((prev) => {
+        const next = new Set(prev);
+        if (isCompleted) next.add(chapterId);
+        else next.delete(chapterId);
+        return next;
+      });
+    }
+  };
 
   useEffect(() => {
     if (!user && !authLoading) {
@@ -130,6 +162,16 @@ export default function CourseDetailPage() {
           ...doc.data(),
         })) as Chapter[];
         setChapters(chapterData);
+
+        // Fetch progress for this course
+        const progressRef = doc(db, "users", user.uid, "progress", id as string);
+        const progressSnap = await getDoc(progressRef);
+        if (progressSnap.exists()) {
+          const data = progressSnap.data() as { completedChapterIds?: string[] };
+          setCompletedIds(new Set(data.completedChapterIds || []));
+        } else {
+          setCompletedIds(new Set());
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -143,7 +185,10 @@ export default function CourseDetailPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+        <div
+          aria-label="Memuat"
+          className="animate-spin rounded-full h-12 w-12 border-2 border-muted-foreground/30 border-t-foreground"
+        />
       </div>
     );
   }
@@ -153,7 +198,7 @@ export default function CourseDetailPage() {
       <Layout pageTitle="Kelas Tidak Ditemukan">
         <div className="text-center p-10">
           <p className="text-lg font-semibold mb-2">Kelas tidak ditemukan.</p>
-          <p className="text-gray-600">Silakan kembali ke halaman Kelas.</p>
+          <p className="text-muted-foreground">Silakan kembali ke halaman Kelas.</p>
         </div>
       </Layout>
     );
@@ -164,7 +209,7 @@ export default function CourseDetailPage() {
       <Layout pageTitle="Akses Ditolak">
         <div className="text-center p-10">
           <p className="text-lg font-semibold mb-2">Kamu belum mengikuti kelas ini.</p>
-          <p className="text-gray-600">Silakan kembali ke halaman Kelas dan klik Ikuti Kelas yang tersedia.</p>
+          <p className="text-muted-foreground">Silakan kembali ke halaman Kelas dan klik Ikuti Kelas yang tersedia.</p>
         </div>
       </Layout>
     );
@@ -172,9 +217,9 @@ export default function CourseDetailPage() {
 
   return (
     <Layout pageTitle={course.title}>
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-5xl mx-auto">
         {/* Course Header */}
-        <div className="rounded-lg overflow-hidden shadow-lg border bg-white dark:bg-gray-900">
+        <div className="rounded-lg overflow-hidden shadow-sm border bg-card">
           <div className="relative h-48 md:h-64">
             <Image
               src={course.imageUrl || "/photos/working.jpg"}
@@ -184,20 +229,19 @@ export default function CourseDetailPage() {
             />
           </div>
           <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{course.title}</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">Mentor: {course.mentor}</p>
-            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{course.description}</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{course.title}</h1>
+            <p className="text-sm text-muted-foreground mt-2">Mentor: {course.mentor}</p>
+            <p className="text-sm md:text-base text-muted-foreground mt-1">{course.description}</p>
           </div>
         </div>
 
-        {/* Chapters Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
+        <div className="bg-card rounded-lg shadow-sm border p-6">
+          <h2 className="text-xl font-semibold mb-4 text-foreground">
             Materi Chapter
           </h2>
           
           {chapters.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-400">
+            <p className="text-muted-foreground">
               Belum ada chapter ditambahkan oleh pengajar.
             </p>
           ) : (
@@ -206,11 +250,11 @@ export default function CourseDetailPage() {
                 <AccordionItem 
                   key={chapter.id} 
                   value={`item-${index}`}
-                  className="border-b border-gray-200 dark:border-gray-700"
+                  className="border-b border-border"
                 >
                   <AccordionTrigger className="text-left hover:no-underline">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-500">#{index + 1}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">#{index + 1}</span>
                       <span className="font-medium">{chapter.title}</span>
                     </div>
                   </AccordionTrigger>
@@ -218,22 +262,36 @@ export default function CourseDetailPage() {
                     {renderChapterContent(chapter)}
 
                     {chapter.description && (
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                      <p className="text-sm text-muted-foreground">
                         {chapter.description}
                       </p>
                     )}
 
                     {chapter.text && (
-                      <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
+                      <p className="text-sm md:text-base text-foreground whitespace-pre-line">
                         {chapter.text}
                       </p>
                     )}
 
                     {!chapter.videoId && !chapter.image && !chapter.pdfUrl && !chapter.text && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                      <p className="text-sm text-muted-foreground italic">
                         Konten belum tersedia.
                       </p>
                     )}
+
+                    {/* Completion toggle inside content */}
+                    <div className="mt-2 pt-3 border-t border-border flex items-center justify-end gap-2">
+                      <label className="flex items-center gap-2 text-sm text-muted-foreground select-none">
+                        <input
+                          type="checkbox"
+                          aria-label={`Tandai selesai: ${chapter.title}`}
+                          checked={completedIds.has(chapter.id)}
+                          onChange={() => handleToggleChapterCompleted(chapter.id)}
+                          className="h-4 w-4 rounded border-border text-foreground focus:ring-ring"
+                        />
+                        Tandai selesai
+                      </label>
+                    </div>
                   </AccordionContent>
                 </AccordionItem>
               ))}
@@ -243,4 +301,28 @@ export default function CourseDetailPage() {
       </div>
     </Layout>
   );
+}
+
+async function updateProgress(
+  db: typeof import("@/lib/firebase").db,
+  userId: string,
+  courseId: string,
+  chapterId: string,
+  action: "add" | "remove",
+  courseMeta?: { title?: string; imageUrl?: string }
+) {
+  const progressRef = doc(db, "users", userId, "progress", courseId);
+  const payload: { updatedAt: FieldValue; completedChapterIds?: FieldValue; courseTitle?: string; courseImageUrl?: string } = {
+    updatedAt: serverTimestamp(),
+  };
+  if (courseMeta?.title) payload.courseTitle = courseMeta.title;
+  if (courseMeta?.imageUrl) payload.courseImageUrl = courseMeta.imageUrl;
+
+  if (action === "add") {
+    payload.completedChapterIds = arrayUnion(chapterId);
+  } else {
+    payload.completedChapterIds = arrayRemove(chapterId);
+  }
+
+  await setDoc(progressRef, payload, { merge: true });
 }
