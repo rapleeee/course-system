@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
-import { Timestamp } from "firebase-admin/firestore";
+import { Timestamp, FieldValue as AdminFieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase-admin";
 
 export const runtime = "nodejs";
@@ -72,6 +72,20 @@ export async function POST(req: NextRequest) {
       { planId: "basic_monthly", price: 30000, status, lastPaymentAt: now, currentPeriodStart, currentPeriodEnd, orderId: order_id, updatedAt: Timestamp.now() },
       { merge: true }
     );
+
+    // Assign subscriber role and convenience flags on user profile when successful
+    if (uid) {
+      const userRef = adminDb.collection("users").doc(uid);
+      const updates: Record<string, unknown> = { updatedAt: Timestamp.now() };
+      if (success) {
+        updates["roles"] = AdminFieldValue.arrayUnion("subscriber");
+        updates["subscriptionActive"] = true;
+        updates["subscriberUntil"] = currentPeriodEnd;
+      } else {
+        updates["subscriptionActive"] = false;
+      }
+      await userRef.set(updates, { merge: true });
+    }
 
     return NextResponse.json({ ok: true });
   } catch (e) {

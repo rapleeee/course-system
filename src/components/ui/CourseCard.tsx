@@ -85,13 +85,16 @@ export default function CourseCard({
         href={`/admin/course/${id}`}
         className="p-4 block cursor-pointer hover:bg-gray-50 dark:hover:bg-neutral-800 transition rounded-t-lg"
       >
-        <Image
-          src={displayedImage}
-          alt={title}
-          width={550}
-          height={150}
-          className="rounded-md object-cover mb-3"
-        />
+        <div className="relative w-full h-40 rounded-md overflow-hidden mb-3 bg-muted">
+          <Image
+            src={displayedImage}
+            alt={title}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
+            className="object-cover"
+            priority={false}
+          />
+        </div>
         <div className="flex flex-col items-start text-left mb-3">
           <h3 className="text-lg font-semibold">{title}</h3>
           <p className="text-sm text-gray-500">Mentor: {mentor}</p>
