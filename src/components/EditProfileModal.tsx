@@ -60,7 +60,8 @@ export default function EditProfileModal({
 
       if (photoFile) {
         const storage = getStorage();
-        const photoRef = ref(storage, `users/${userId}/profile.jpg`);
+        const safeName = photoFile.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+        const photoRef = ref(storage, `users/${userId}/profile-${Date.now()}-${safeName}`);
         await uploadBytes(photoRef, photoFile);
         photoURL = await getDownloadURL(photoRef);
       }

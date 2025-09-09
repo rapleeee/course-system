@@ -35,7 +35,7 @@ type ProfileData = {
 export default function Layout({ children, pageTitle = "Dashboard" }: LayoutProps) {
   const { user } = useAuth();
   const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [chatList] = useState<{ id: string; name: string }[]>([]);
+  // Chat list no longer used; ChatBox handles its own context
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -102,7 +102,7 @@ export default function Layout({ children, pageTitle = "Dashboard" }: LayoutProp
             </DropdownMenu>
           </div>
         </div>
-              <ChatBox chatList={chatList} />
+              <ChatBox />
 
         <div className="w-full p-8">{children}</div>
       </main>
