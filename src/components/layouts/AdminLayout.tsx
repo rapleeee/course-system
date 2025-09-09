@@ -125,20 +125,20 @@ export default function AdminLayout({ children, pageTitle = "Admin Dashboard" }:
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-neutral-900 overflow-hidden">
       <aside
-        className={`fixed lg:static z-40 top-0 left-0 h-full w-64 bg-white dark:bg-neutral-800 border-r border-gray-200 dark:border-neutral-700 flex flex-col justify-between p-6 transform transition-transform ${
+        className={`fixed lg:static z-40 top-0 left-0 h-full w-64 bg-white dark:bg-neutral-800 border-r border-gray-200 dark:border-neutral-700 flex flex-col p-6 transform transition-transform ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0`}
       >
-        <div>
-          <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col min-h-0 flex-1">
+          <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Admin Panel</h2>
             <button onClick={() => setSidebarOpen(false)} className="lg:hidden">
               <X className="text-gray-600 dark:text-white" />
             </button>
           </div>
-          <nav className="space-y-6">
+          <nav className="space-y-6 overflow-y-auto pr-2 -mr-2 flex-1 min-h-0">
             {sidebarMenu.map((section) => (
-              <div key={section.title}>
+              <div key={section.title} className="pb-2">
                 <p className="text-xs uppercase font-semibold text-gray-400 tracking-wide mb-2">
                   {section.title}
                 </p>
@@ -159,12 +159,14 @@ export default function AdminLayout({ children, pageTitle = "Admin Dashboard" }:
             ))}
           </nav>
         </div>
-        <button
-          className="w-full flex items-center justify-center gap-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900 hover:text-red-700 border bg-red-50 dark:bg-red-200 rounded-md px-4 py-2 transition-all"
-          onClick={handleLogout}
-        >
-          <LogOut size={16} /> Logout
-        </button>
+        <div className="pt-4 mt-4 border-t border-gray-200 dark:border-neutral-700">
+          <button
+            className="w-full flex items-center justify-center gap-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-700 border bg-red-50 dark:bg-neutral-800 rounded-md px-4 py-2 transition-all"
+            onClick={handleLogout}
+          >
+            <LogOut size={16} /> Logout
+          </button>
+        </div>
       </aside>
       <main className="flex-1 flex flex-col h-full overflow-hidden">
         <header className="flex items-center justify-between px-6 py-4 border-b bg-white dark:bg-neutral-900 sticky top-0 z-10">

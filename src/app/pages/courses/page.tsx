@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { db } from "@/lib/firebase";
 import {
@@ -9,6 +9,7 @@ import {
   getDoc,
   getDocs,
   setDoc,
+  onSnapshot,
 } from "firebase/firestore";
 import Layout from "@/components/layout";
 import Image from "next/image";
@@ -33,12 +34,18 @@ type ProfileData = {
   claimedCourses?: string[];
 };
 
+type SubscriptionDocLite = {
+  status?: string;
+  currentPeriodEnd?: { toMillis: () => number };
+};
+
 export default function CoursesPage() {
   const { user, loading } = useAuth();
 const [profile, setProfile] = useState<ProfileData | null>(null);
 const [courses, setCourses] = useState<Course[]>([]);
 const [claiming, setClaiming] = useState<string>("");
 const [isAuthenticated, setIsAuthenticated] = useState(false);
+const [sub, setSub] = useState<SubscriptionDocLite | null>(null);
 
 useEffect(() => {
   const fetchProfileAndCourses = async (uid: string) => {
@@ -71,11 +78,26 @@ useEffect(() => {
   if (user) {
     setIsAuthenticated(true);
     fetchProfileAndCourses(user.uid);
+    const unsub = onSnapshot(doc(db, "subscriptions", user.uid), (snap) => {
+      setSub((snap.data() as SubscriptionDocLite) ?? null);
+    });
+    return () => unsub();
   }
 }, [user]); 
 
+  const subActive = useMemo(() => {
+    if (!sub || sub.status !== "active") return false;
+    const end = sub.currentPeriodEnd?.toMillis?.() ?? 0;
+    return end >= Date.now();
+  }, [sub]);
+
   const handleClaim = async (courseId: string) => {
     if (!user || !profile) return;
+    const course = courses.find((c) => c.id === courseId);
+    if (course && !course.isFree && !subActive) {
+      toast.error("Kelas premium hanya untuk pelanggan aktif. Silakan berlangganan terlebih dahulu.");
+      return;
+    }
 
     try {
       setClaiming(courseId);
@@ -160,6 +182,7 @@ useEffect(() => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {courses.map((course) => {
                 const isClaimed = claimed.includes(course.id);
+                const locked = !course.isFree && !subActive && !isClaimed;
                 return (
                   <Card key={course.id} className="p-4 space-y-2">
                     <Image
@@ -178,17 +201,21 @@ useEffect(() => {
                     <div className="flex justify-between items-center">
                       <Button
                         onClick={() => handleClaim(course.id)}
-                        disabled={isClaimed || claiming === course.id}
+                        disabled={isClaimed || claiming === course.id || locked}
                       >
                         {isClaimed
                           ? "Sudah Diikuti"
                           : claiming === course.id
                           ? "Mengikuti..."
+                          : locked
+                          ? "Terkunci"
                           : "Ikuti Kelas"}
                       </Button>
-                      {isClaimed && (
+                      {locked ? (
+                        <span className="text-amber-600 text-sm">Premium</span>
+                      ) : isClaimed ? (
                         <span className="text-green-500 text-sm">✔</span>
-                      )}
+                      ) : null}
                     </div>
                   </Card>
                 );
