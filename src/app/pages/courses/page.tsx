@@ -17,6 +17,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { toast } from "sonner";
+import { CheckCircle, Lock } from "lucide-react";
 
 type Course = {
   id: string;
@@ -46,6 +47,9 @@ const [courses, setCourses] = useState<Course[]>([]);
 const [claiming, setClaiming] = useState<string>("");
 const [isAuthenticated, setIsAuthenticated] = useState(false);
 const [sub, setSub] = useState<SubscriptionDocLite | null>(null);
+const [search, setSearch] = useState("");
+const [typeFilter, setTypeFilter] = useState<"all" | "video" | "module">("all");
+const [accessFilter, setAccessFilter] = useState<"all" | "free" | "premium">("all");
 
 useEffect(() => {
   const fetchProfileAndCourses = async (uid: string) => {
@@ -135,6 +139,16 @@ useEffect(() => {
     );
 
   const claimed = profile?.claimedCourses || [];
+  const normalized = (s: string) => s.toLowerCase();
+  const filteredCourses = courses.filter((c) => {
+    const matchesSearch = !search
+      ? true
+      : [c.title, c.description, c.mentor].some((x) => normalized(x || "").includes(normalized(search)));
+    const matchesType = typeFilter === "all" ? true : c.materialType === typeFilter;
+    const matchesAccess =
+      accessFilter === "all" ? true : accessFilter === "free" ? c.isFree : !c.isFree;
+    return matchesSearch && matchesType && matchesAccess;
+  });
 
   return (
     <Layout pageTitle="Kelas Kamu">
@@ -146,25 +160,39 @@ useEffect(() => {
               <p>Kamu belum mengikuti kelas apapun.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
               {courses
                 .filter((c) => claimed.includes(c.id))
                 .map((course) => (
-                  <Link key={course.id} href={`/pages/courses/${course.id}`}>
-                    <Card className="p-4 space-y-2 cursor-pointer hover:shadow-lg transition">
-                      <Image
-                        src={course.imageUrl || "/photos/working.jpg"}
-                        alt={course.title}
-                        width={400}
-                        height={200}
-                        className="rounded w-full h-40 object-cover"
-                      />
-                      <h3 className="text-lg font-semibold">{course.title}</h3>
-                      <p className="text-sm text-gray-600">{course.description}</p>
-                      <p className="text-sm text-gray-500">
-                        Mentor: {course.mentor} | {course.materialType} |{" "}
-                        {course.isFree ? "Gratis" : "Berbayar"}
-                      </p>
+                  <Link key={course.id} href={`/pages/courses/${course.id}`} className="block">
+                    <Card className="flex flex-col h-full p-4 cursor-pointer hover:shadow-lg transition">
+                      <div className="relative w-full h-40 rounded-md overflow-hidden mb-3 bg-muted">
+                        <Image
+                          src={course.imageUrl || "/photos/working.jpg"}
+                          alt={course.title}
+                          fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                          className="object-cover"
+                          priority={false}
+                        />
+                        {!course.isFree && (
+                          <span className="absolute top-2 right-2 bg-amber-500 text-white text-[10px] font-semibold px-2 py-1 rounded">
+                            Premium
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="text-lg font-semibold leading-snug min-h-[48px]">{course.title}</h3>
+                      <p className="text-sm text-gray-600 min-h-[40px] overflow-hidden">{course.description}</p>
+                      <div className="text-xs text-gray-500 mt-1">
+                        Mentor: {course.mentor} • {course.materialType} • {course.isFree ? "Gratis" : "Premium"}
+                      </div>
+                      <div className="flex-1" />
+                      <div className="mt-3 flex items-center justify-end">
+                        <span className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm bg-neutral-50 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-100 pointer-events-none">
+                          <CheckCircle className="h-4 w-4" />
+                          Buka Kelas
+                        </span>
+                      </div>
                     </Card>
                   </Link>
                 ))}
@@ -174,48 +202,91 @@ useEffect(() => {
 
         <section>
           <h2 className="text-2xl font-bold mb-4">Daftar Kelas Tersedia</h2>
+          <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Cari judul, deskripsi, atau mentor..."
+              className="col-span-1 md:col-span-2 border rounded-md px-3 py-2"
+            />
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value as "all" | "video" | "module")}
+              className="border rounded-md px-3 py-2"
+            >
+              <option value="all">Semua Tipe</option>
+              <option value="video">Video</option>
+              <option value="module">E-Module</option>
+            </select>
+            <select
+              value={accessFilter}
+              onChange={(e) => setAccessFilter(e.target.value as "all" | "free" | "premium")}
+              className="border rounded-md px-3 py-2"
+            >
+              <option value="all">Semua Akses</option>
+              <option value="free">Gratis</option>
+              <option value="premium">Premium</option>
+            </select>
+          </div>
           {courses.length === 0 ? (
             <div className="p-6 flex flex-col items-center text-center text-gray-500">
               <p>Belum ada kelas tersedia saat ini.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {courses.map((course) => {
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+              {filteredCourses.map((course) => {
                 const isClaimed = claimed.includes(course.id);
                 const locked = !course.isFree && !subActive && !isClaimed;
                 return (
-                  <Card key={course.id} className="p-4 space-y-2">
-                    <Image
-                      src={course.imageUrl || "/photos/working.jpg"}
-                      alt={course.title}
-                      width={400}
-                      height={200}
-                      className="rounded w-full h-40 object-cover"
-                    />
-                    <h3 className="text-lg font-semibold">{course.title}</h3>
-                    <p className="text-sm text-gray-600">{course.description}</p>
-                    <p className="text-sm text-gray-500">
-                      Mentor: {course.mentor} | {course.materialType} |{" "}
-                      {course.isFree ? "Gratis" : "Berbayar"}
-                    </p>
-                    <div className="flex justify-between items-center">
-                      <Button
-                        onClick={() => handleClaim(course.id)}
-                        disabled={isClaimed || claiming === course.id || locked}
-                      >
-                        {isClaimed
-                          ? "Sudah Diikuti"
-                          : claiming === course.id
-                          ? "Mengikuti..."
-                          : locked
-                          ? "Terkunci"
-                          : "Ikuti Kelas"}
-                      </Button>
-                      {locked ? (
-                        <span className="text-amber-600 text-sm">Premium</span>
-                      ) : isClaimed ? (
-                        <span className="text-green-500 text-sm">✔</span>
-                      ) : null}
+                  <Card key={course.id} className="flex flex-col h-full p-4">
+                    <div className="relative w-full h-40 rounded-md overflow-hidden mb-3 bg-muted">
+                      <Image
+                        src={course.imageUrl || "/photos/working.jpg"}
+                        alt={course.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className="object-cover"
+                        priority={false}
+                      />
+                      {!course.isFree && (
+                        <span className="absolute top-2 right-2 bg-amber-500 text-white text-[10px] font-semibold px-2 py-1 rounded">
+                          Premium
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-lg font-semibold leading-snug min-h-[48px]">{course.title}</h3>
+                    <p className="text-sm text-gray-600 min-h-[40px] overflow-hidden">{course.description}</p>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Mentor: {course.mentor} • {course.materialType} • {course.isFree ? "Gratis" : "Premium"}
+                    </div>
+                    <div className="flex-1" />
+                    <div className="mt-3 flex items-center gap-3">
+                      {isClaimed ? (
+                        <Button asChild variant="secondary" className="flex-1">
+                          <Link href={`/pages/courses/${course.id}`} className="inline-flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4" />
+                            Buka Kelas
+                          </Link>
+                        </Button>
+                      ) : (
+                        <Button
+                          className={`flex-1 ${locked ? "cursor-not-allowed" : ""}`}
+                          onClick={() => handleClaim(course.id)}
+                          disabled={claiming === course.id || locked}
+                        >
+                          {claiming === course.id
+                            ? "Mengikuti..."
+                            : locked
+                            ? (<span className="inline-flex items-center gap-2"><Lock className="h-4 w-4" /> Terkunci</span>)
+                            : "Ikuti Kelas"}
+                        </Button>
+                      )}
+                      {locked && (
+                        <Link href="/pages/subscription" className="text-blue-600 text-xs underline whitespace-nowrap">
+                          Langganan untuk akses
+                        </Link>
+                      )}
                     </div>
                   </Card>
                 );

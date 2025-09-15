@@ -131,7 +131,7 @@ export default function AddCoursesPage() {
         <div className="flex items-center gap-4">
           <Label htmlFor="isFree" className="block">Gratis?</Label>
           <Switch id="isFree" checked={isFree} onCheckedChange={setIsFree} />
-          <span className="text-sm text-muted-foreground">{isFree ? "Gratis" : "Berbayar"}</span>
+          <span className="text-sm text-muted-foreground">{isFree ? "Gratis" : "Hanya Subscriber"}</span>
         </div>
 
         <div>

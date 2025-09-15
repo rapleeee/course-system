@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     const status = success ? "active" : transaction_status;
 
     await subRef.set(
-      { planId: "basic_monthly", price: 30000, status, lastPaymentAt: now, currentPeriodStart, currentPeriodEnd, orderId: order_id, updatedAt: Timestamp.now() },
+      { planId: "basic_monthly", price: 5000, status, lastPaymentAt: now, currentPeriodStart, currentPeriodEnd, orderId: order_id, updatedAt: Timestamp.now() },
       { merge: true }
     );
 

@@ -76,10 +76,30 @@ export default function SubscribeButton({
       if (!snap) throw new Error("Midtrans not loaded");
 
       snap.pay(data.token, {
-        onSuccess: () => {
-          // Status final akan dikirim via webhook → Firestore → realtime update UI kamu
+        onSuccess: (res?: unknown) => {
+          const r = res as { order_id?: string; orderId?: string } | undefined;
+          const orderId = r?.order_id || r?.orderId;
+          if (orderId) {
+            fetch("/api/pay/confirm", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ orderId }),
+            }).catch(() => {});
+          }
+          window.location.href = "/pages/subscription/thanks";
         },
-        onPending: () => {},
+        onPending: (res?: unknown) => {
+          // Sync best-effort supaya halaman status tidak tertinggal
+          const r = res as { order_id?: string; orderId?: string } | undefined;
+          const orderId = r?.order_id || r?.orderId;
+          if (orderId) {
+            fetch("/api/pay/confirm", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ orderId }),
+            }).catch(() => {});
+          }
+        },
         onError: () => {
           alert("Pembayaran gagal. Coba lagi.");
         },
@@ -104,7 +124,7 @@ export default function SubscribeButton({
       aria-disabled={loading || !uid}
       aria-busy={loading}
     >
-      {loading ? "Menyiapkan..." : "Langganan Rp30.000/bulan"}
+      {loading ? "Menyiapkan..." : "Langganan Rp5.000/bulan"}
     </button>
   );
 }

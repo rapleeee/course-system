@@ -6,6 +6,7 @@ import { db } from "@/lib/firebase";
 import { doc, getDoc, collection, getDocs, query, orderBy, setDoc, serverTimestamp, arrayUnion, arrayRemove, type FieldValue } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import Layout from "@/components/layout";
+import Link from "next/link";
 import Image from "next/image";
 import YouTube from 'react-youtube';
 import {
@@ -210,6 +211,11 @@ export default function CourseDetailPage() {
         <div className="text-center p-10">
           <p className="text-lg font-semibold mb-2">Kamu belum mengikuti kelas ini.</p>
           <p className="text-muted-foreground">Silakan kembali ke halaman Kelas dan klik Ikuti Kelas yang tersedia.</p>
+          <div className="mt-4">
+            <Link href="/pages/subscription" className="text-blue-600 underline text-sm">
+              Upgrade langganan untuk akses premium
+            </Link>
+          </div>
         </div>
       </Layout>
     );

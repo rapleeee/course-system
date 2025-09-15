@@ -6,7 +6,6 @@ import { doc, onSnapshot, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
-  CreditCard,
   ShieldCheck,
   Crown,
   BookOpen,
@@ -38,12 +37,12 @@ type UserLite = { uid: string; name?: string | null; email?: string | null };
 const formatDate = (ts?: Timestamp) =>
   ts ? new Date(ts.toMillis()).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "-";
 
-const getErrorMessage = (e: unknown) => (e instanceof Error ? e.message : (() => { try { return JSON.stringify(e); } catch { return String(e); }})());
+// (removed unused getErrorMessage)
 
 export default function SubscriptionPage() {
   const [authUser, setAuthUser] = useState<UserLite | null>(null);
   const [sub, setSub] = useState<SubscriptionDoc | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
 
   useEffect(() => {
     const off = onAuthStateChanged(getAuth(), (u) => {
@@ -65,57 +64,9 @@ export default function SubscriptionPage() {
     if (!sub || sub.status !== "active") return false;
     return (sub.currentPeriodEnd?.toMillis() ?? 0) >= Date.now();
   }, [sub]);
-// Tetap pakai global typing: window.snap?: SnapJS
-
-const ensureSnapLoaded = () =>
-  new Promise<void>((resolve, reject) => {
-    if (typeof window === "undefined") return reject(new Error("Window not available"));
-    if (window.snap) return resolve();
-
-    const url = process.env.NEXT_PUBLIC_MIDTRANS_SNAP_URL || "https://app.sandbox.midtrans.com/snap/snap.js";
-    const clientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY ?? "";
-    if (!clientKey) return reject(new Error("Missing NEXT_PUBLIC_MIDTRANS_CLIENT_KEY"));
-
-    const s = document.createElement("script");
-    s.src = url;
-    s.async = true;
-    s.setAttribute("data-client-key", clientKey);
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error("Failed to load Midtrans snap.js"));
-    document.head.appendChild(s);
-  });
-
-const handleSubscribe = async () => {
-  if (!authUser?.uid) return;
-  setLoading(true);
-  try {
-    await ensureSnapLoaded();
-
-    // ✅ Narrowing: pastikan snap ada sebelum dipakai
-    const snap = window.snap;
-    if (!snap) throw new Error("Midtrans not loaded");
-
-    const res = await fetch("/api/pay/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        uid: authUser.uid,
-        name: authUser.name ?? "User",
-        email: authUser.email ?? undefined,
-      }),
-    });
-
-    const data: { token?: string; error?: string } = await res.json();
-    if (!res.ok || !data.token) throw new Error(data.error ?? "Gagal membuat transaksi");
-
-    snap.pay(data.token, {
-      onError: () => alert("Pembayaran gagal. Coba lagi."),
-    });
-  } catch (e) {
-    alert(getErrorMessage(e));
-  } finally {
-    setLoading(false);
-  }
+// Pembayaran Midtrans dinonaktifkan. Gunakan transfer manual.
+const goToManual = () => {
+  window.location.href = "/pages/subscription/manual";
 };
 
   return (
@@ -134,7 +85,7 @@ const handleSubscribe = async () => {
           </div>
           <div className="rounded-xl bg-white/15 p-4 text-right backdrop-blur-sm">
             <div className="text-sm text-white/90">Harga</div>
-            <div className="text-3xl font-extrabold leading-tight">Rp 30.000</div>
+            <div className="text-3xl font-extrabold leading-tight">Rp 5.000</div>
             <div className="text-xs text-white/90">per bulan</div>
           </div>
         </div>
@@ -161,18 +112,17 @@ const handleSubscribe = async () => {
           </div>
 
           <button
-            onClick={handleSubscribe}
+            onClick={goToManual}
             disabled={!authUser || loading}
             className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold shadow-sm transition bg-blue-600 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-500 dark:hover:bg-blue-600"
             >
-            <CreditCard className="h-4 w-4" />
-            {loading ? "Menyiapkan..." : isActive ? "Perpanjang" : "Langganan sekarang"}
+            {isActive ? "Perpanjang via transfer" : "Langganan via transfer"}
           </button>
         </div>
 
         <div className="mt-3 flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
           <Clock className="h-4 w-4" />
-          Status akan otomatis diperbarui setelah pembayaran dikonfirmasi.
+          Setelah bukti transfer disetujui admin, status aktif otomatis.
         </div>
 
         {!authUser && (
@@ -182,6 +132,16 @@ const handleSubscribe = async () => {
             Silakan login terlebih dahulu untuk berlangganan.
           </div>
         )}
+      </div>
+      <div className="mt-4 rounded-lg border p-4 bg-white dark:bg-neutral-900">
+        <div className="text-sm text-neutral-700 dark:text-neutral-300">
+          Pembayaran hanya melalui transfer ke rekening yang disediakan. Kirim bukti, admin akan cek manual.
+        </div>
+        <div className="mt-2">
+          <a href="/pages/subscription/manual" className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold shadow-sm transition bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700">
+            Ajukan via transfer manual
+          </a>
+        </div>
       </div>
       <div className="mt-8">
         <h2 className="mb-3 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
