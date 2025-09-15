@@ -11,6 +11,7 @@ import {
   query as fsQuery, Timestamp, where,
 } from "firebase/firestore";
 import Image from "next/image";
+import { Megaphone } from "lucide-react";
 
 /* === Types === */
 type ProfileData = {
@@ -84,8 +85,10 @@ export default function DashboardPage() {
 
   const fetchAnnouncements = useCallback(async () => {
     try {
+      const cutoff = Timestamp.fromMillis(Date.now() - 5 * 24 * 60 * 60 * 1000);
       const q = fsQuery(
         collection(db, "announcements"),
+        where("createdAt", ">=", cutoff),
         orderBy("createdAt", "desc"),
         limit(3)
       );
@@ -255,31 +258,44 @@ export default function DashboardPage() {
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">Pengumuman Terbaru</h2>
           {announcements.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
+            <div className="rounded-2xl border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
               Belum ada pengumuman.
             </div>
           ) : (
-            <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <ul className="space-y-3">
               {announcements.map((a) => {
                 const created = a.createdAt?.toDate();
                 const dateStr = created
                   ? created.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
                   : "-";
                 return (
-                  <li
-                    key={a.id}
-                    className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
-                  >
-                    <div className="mb-1 text-sm text-neutral-500 dark:text-neutral-400">{dateStr}</div>
-                    <div className="font-medium">{a.title}</div>
-                    {a.body ? (
-                      <p className="mt-1 line-clamp-2 text-sm text-neutral-600 dark:text-neutral-300">{a.body}</p>
-                    ) : null}
-                    {a.courseId ? (
-                      <Link href={`/course/${a.courseId}`} className="mt-2 inline-block text-sm text-blue-600 hover:underline dark:text-blue-400">
-                        Buka kelas
-                      </Link>
-                    ) : null}
+                  <li key={a.id} className="w-full">
+                    <div className="relative overflow-hidden rounded-2xl p-5 bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 text-white shadow-md">
+                      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div className="flex items-start gap-3">
+                          <div className="shrink-0 rounded-full bg-white/20 p-2">
+                            <Megaphone className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <div className="text-xs/relaxed text-white/80">{dateStr}</div>
+                            <div className="text-base md:text-lg font-semibold leading-snug">{a.title}</div>
+                            {a.body ? (
+                              <p className="mt-1 text-sm text-white/90 line-clamp-3">{a.body}</p>
+                            ) : null}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {a.courseId ? (
+                            <Link
+                              href={`/pages/courses/${a.courseId}`}
+                              className="inline-flex items-center rounded-lg bg-white/15 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/25"
+                            >
+                              Buka Kelas
+                            </Link>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
                   </li>
                 );
               })}

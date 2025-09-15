@@ -5,14 +5,19 @@ import { Button } from "@/components/ui/button";
 import { MessageCircle, Send, Bot, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 
-type Msg = { role: "user" | "assistant"; content: string };
+type Msg = { role: "user" | "assistant"; content: string; createdAt: number };
 
 export default function ChatBox() {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([
-    { role: "assistant", content: "Hai! Aku MentorAI. Tanyakan apa saja tentang materi. Coba: 'ringkas materi', 'beri contoh soal', atau 'kuis singkat'." },
+    {
+      role: "assistant",
+      content:
+        "Hai! Aku MentorAI. Tanyakan apa saja tentang materi. Coba: 'ringkas materi', 'beri contoh soal', atau 'kuis singkat'.",
+      createdAt: Date.now(),
+    },
   ]);
   const endRef = useRef<HTMLDivElement | null>(null);
   const pathname = usePathname();
@@ -68,13 +73,15 @@ export default function ChatBox() {
     let idx = 0;
     const speed = 12; // chars per tick
     let current = "";
-    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+    const now = Date.now();
+    setMessages((prev) => [...prev, { role: "assistant", content: "", createdAt: now }]);
     const int = setInterval(() => {
       idx += speed;
       current = tokens.slice(0, idx).join("");
       setMessages((prev) => {
         const cloned = [...prev];
-        cloned[cloned.length - 1] = { role: "assistant", content: current };
+        const last = cloned[cloned.length - 1];
+        cloned[cloned.length - 1] = { role: "assistant", content: current, createdAt: last?.createdAt ?? now };
         return cloned;
       });
       endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -86,7 +93,7 @@ export default function ChatBox() {
     const content = (text ?? input).trim();
     if (!content || loading) return;
     setInput("");
-    const userMsg: Msg = { role: "user", content };
+    const userMsg: Msg = { role: "user", content, createdAt: Date.now() };
     setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
     try {
@@ -99,11 +106,29 @@ export default function ChatBox() {
       const reply = data.reply || "Maaf, aku belum bisa menjawab itu.";
       typeReply(reply);
     } catch {
-      setMessages((prev) => [...prev, { role: "assistant", content: "Maaf, terjadi kendala koneksi." }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Maaf, terjadi kendala koneksi.", createdAt: Date.now() },
+      ]);
     } finally {
       setLoading(false);
       setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
     }
+  };
+
+  // textarea autosize
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "0px";
+    const next = Math.min(140, el.scrollHeight);
+    el.style.height = next + "px";
+  }, [input]);
+
+  const formatTime = (ts: number) => {
+    const d = new Date(ts);
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
   return (
@@ -148,11 +173,20 @@ export default function ChatBox() {
           <div className="flex-1 overflow-y-auto p-3 space-y-3">
             {messages.map((m, i) => (
               <div key={i} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
-                <div className={`max-w-[85%] rounded-md px-3 py-2 text-sm ${
-                  m.role === "user"
-                    ? "bg-foreground text-primary-foreground"
-                    : "bg-muted text-foreground"
-                }`}>{m.content}</div>
+                <div className="max-w-[85%]">
+                  <div
+                    className={`rounded-md px-3 py-2 text-sm leading-7 whitespace-pre-wrap ${
+                      m.role === "user"
+                        ? "bg-foreground text-primary-foreground"
+                        : "bg-muted text-foreground"
+                    }`}
+                  >
+                    {m.content}
+                  </div>
+                  <div className="mt-1 text-[10px] text-muted-foreground/70 select-none">
+                    {m.role === "assistant" ? "MentorAI" : "Kamu"} • {formatTime(m.createdAt)}
+                  </div>
+                </div>
               </div>
             ))}
             {!loading && (
@@ -175,16 +209,29 @@ export default function ChatBox() {
           </div>
 
           <form
-            className="border-t p-2 flex items-center gap-2"
-            onSubmit={(e) => { e.preventDefault(); sendMessage(); }}
+            className="border-t p-2 flex items-end gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              sendMessage();
+            }}
           >
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              className="flex-1 rounded-md border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-              placeholder="Tulis pertanyaan…"
-            />
-            <Button type="submit" size="sm" disabled={loading || !input.trim()}>
+            <div className="flex-1">
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
+                rows={1}
+                className="w-full max-h-[140px] resize-none rounded-md border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                placeholder="Tulis pertanyaan… (Shift+Enter baris baru)"
+              />
+            </div>
+            <Button type="submit" size="sm" disabled={loading || !input.trim()} title="Kirim (Enter)">
               <Send className="size-4" />
             </Button>
           </form>

@@ -20,6 +20,7 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { updateDoc } from "firebase/firestore";
 import { toast } from "sonner"; // pastikan kamu sudah install `sonner`
+import { Switch } from "@/components/ui/switch";
 
 type CourseCardProps = {
   id: string;
@@ -46,6 +47,7 @@ export default function CourseCard({
   // State lokal untuk edit form
   const [editTitle, setEditTitle] = useState(title);
   const [editMentor, setEditMentor] = useState(mentor);
+  const [editIsFree, setEditIsFree] = useState(isFree);
 
   const handleDelete = async () => {
     await deleteDoc(doc(db, "courses", id));
@@ -67,6 +69,7 @@ export default function CourseCard({
     await updateDoc(ref, {
       title: editTitle,
       mentor: editMentor,
+      isFree: editIsFree,
     });
 
     toast.success("Course berhasil diperbarui.");
@@ -99,7 +102,7 @@ export default function CourseCard({
           <h3 className="text-lg font-semibold">{title}</h3>
           <p className="text-sm text-gray-500">Mentor: {mentor}</p>
           <p className="text-sm text-gray-500">
-            Tipe: {materialType} | {isFree ? "Gratis" : "Berbayar"}
+            Tipe: {materialType} | {isFree ? "Gratis" : "Premium"}
           </p>
         </div>
       </Link>
@@ -131,6 +134,11 @@ export default function CourseCard({
                 value={editMentor}
                 onChange={(e) => setEditMentor(e.target.value)}
               />
+              <div className="flex items-center gap-3">
+                <span className="text-sm">Gratis?</span>
+                <Switch checked={editIsFree} onCheckedChange={setEditIsFree} />
+                <span className="text-xs text-muted-foreground">{editIsFree ? "Gratis" : "Hanya Subscriber"}</span>
+              </div>
             </div>
             <DialogFooter className="mt-4">
               <DialogClose asChild>

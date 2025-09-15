@@ -9,6 +9,7 @@ import { doc, getDoc } from "firebase/firestore";
 import Link from "next/link";
 
 import { ModeToggle } from "@/components/ui/ModeToogle";
+import { Toaster } from "@/components/ui/sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +34,7 @@ import {
   X,
   FilePlus2,
   School2,
+  Megaphone,
 } from "lucide-react";
 
 // Sidebar menu structure
@@ -50,6 +52,7 @@ const sidebarMenu = [
       { name: "Manajemen Course", icon: <BookOpen size={18} />, href: "/admin/managementcourse" },
       { name: "Manajemen Event", icon: <CalendarCheck size={18} />, href: "/admin/events" },
       { name: "Kategori", icon: <Layers size={18} />, href: "/admin/categories" },
+      { name: "Pengumuman", icon: <Megaphone size={18} />, href: "/admin/announcements" },
     ],
   },
   {
@@ -65,6 +68,7 @@ const sidebarMenu = [
     title: "Lainnya",
     items: [
       { name: "Manajemen User", icon: <Users size={18} />, href: "/admin/users" },
+      { name: "Permintaan Langganan", icon: <UserCheck size={18} />, href: "/admin/subscriptions/requests" },
       { name: "Pengaturan", icon: <Settings size={18} />, href: "/admin/adminSettings" },
     ],
   },
@@ -202,6 +206,7 @@ export default function AdminLayout({ children, pageTitle = "Admin Dashboard" }:
           </div>
         </header>
         <div className="p-6 overflow-y-auto flex-1">{children}</div>
+        <Toaster position="top-right" richColors closeButton />
       </main>
 
       {/* Overlay */}

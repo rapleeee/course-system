@@ -11,7 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { CircleUser } from "lucide-react";
+import { CircleUser, Star } from "lucide-react";
 import { useAuth } from "@/lib/useAuth";
 import Link from "next/link";
 import { signOut } from "firebase/auth";
@@ -30,6 +30,9 @@ type ProfileData = {
   level?: string;
   description?: string;
   photoURL?: string;
+  roles?: string[];
+  subscriptionActive?: boolean;
+  subscriberUntil?: unknown;
 };
 
 export default function Layout({ children, pageTitle = "Dashboard" }: LayoutProps) {
@@ -60,6 +63,10 @@ export default function Layout({ children, pageTitle = "Dashboard" }: LayoutProp
     window.location.href = "/auth/login";
   };
 
+  const isSubscriber = Boolean(
+    profile?.subscriptionActive || (profile?.roles || []).includes("subscriber")
+  );
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -75,11 +82,26 @@ export default function Layout({ children, pageTitle = "Dashboard" }: LayoutProp
             <ModeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger className="outline-none">
-                <CircleUser className="cursor-pointer w-7 h-7" />
+                <div className="relative">
+                  <CircleUser className="cursor-pointer w-7 h-7" />
+                  {isSubscriber && (
+                    <Star
+                      className="absolute -top-1 -right-1 w-3.5 h-3.5 text-amber-400"
+                      fill="currentColor"
+                    />
+                  )}
+                </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
-                  <div className="font-bold">{profile?.name || "User"}</div>
+                  <div className="font-bold flex items-center gap-2">
+                    {profile?.name || "User"}
+                    {isSubscriber && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200 px-2 py-0.5 text-[10px] font-semibold">
+                        <Star className="w-3 h-3" fill="currentColor" /> Subscriber
+                      </span>
+                    )}
+                  </div>
                   <div className="text-sm text-muted-foreground">
                     @{user?.email?.split("@")[0] || "rapler"}
                   </div>

@@ -16,12 +16,17 @@ export async function POST(req: NextRequest) {
       const s = (v || "").trim().toLowerCase();
       return ["true", "1", "yes", "on", "prod", "production"].includes(s);
     };
-    const isProduction = parseBool(process.env.MIDTRANS_IS_PRODUCTION);
+    let isProduction = parseBool(process.env.MIDTRANS_IS_PRODUCTION);
     const serverKey = process.env.MIDTRANS_SERVER_KEY;
     const clientKey = process.env.MIDTRANS_CLIENT_KEY;
     if (!serverKey || !clientKey) {
       return NextResponse.json({ error: "Missing MIDTRANS_SERVER_KEY or MIDTRANS_CLIENT_KEY env" }, { status: 500 });
     }
+    // Auto-correct env based on key prefix to avoid 401 due to mismatch
+    const looksSandboxKey = serverKey.startsWith("SB-") || serverKey.includes("SB-Mid-server");
+    const looksProdKey = serverKey.startsWith("Mid-server-");
+    if (looksSandboxKey && isProduction) isProduction = false;
+    if (looksProdKey && !isProduction) isProduction = true;
 
     const snap = new midtransClient.Snap({
       isProduction,
@@ -30,7 +35,7 @@ export async function POST(req: NextRequest) {
     });
 
     const orderId = `sub_${uid}_${Date.now()}`;
-    const grossAmount = 30000;
+    const grossAmount = 5000;
 
     const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
     const proto = req.headers.get("x-forwarded-proto") || (process.env.NODE_ENV === "production" ? "https" : "http");
@@ -45,7 +50,25 @@ export async function POST(req: NextRequest) {
       expiry: { unit: "minutes", duration: 60 },
     };
 
-    const { token } = await snap.createTransaction(parameter);
+    let token: string;
+    try {
+      const res = await snap.createTransaction(parameter);
+      token = res.token;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      const snapUrl = process.env.NEXT_PUBLIC_MIDTRANS_SNAP_URL || "";
+      const frontIsProd = /app\.midtrans\.com/.test(snapUrl) && !/sandbox/.test(snapUrl);
+      const hint = {
+        isProduction,
+        looksSandboxKey,
+        looksProdKey,
+        frontIsProd,
+      };
+      return NextResponse.json(
+        { error: `Midtrans error: ${msg}. Cek kecocokan env/key (hint=${JSON.stringify(hint)})` },
+        { status: 500 }
+      );
+    }
 
     // Best-effort write; jangan blokir token ketika admin credential belum siap
     try {
@@ -60,8 +83,6 @@ export async function POST(req: NextRequest) {
       const snapUrl = process.env.NEXT_PUBLIC_MIDTRANS_SNAP_URL || "";
       const frontIsProd = /app\.midtrans\.com/.test(snapUrl) && !/sandbox/.test(snapUrl);
       const keyPrefix = serverKey.slice(0, 10);
-      const looksSandboxKey = serverKey.startsWith("SB-") || serverKey.includes("SB-Mid-server");
-      const looksProdKey = serverKey.startsWith("Mid-server-");
       if (frontIsProd !== isProduction) {
         console.warn("[pay/create] WARN mismatch frontend vs backend env:", { frontIsProd, isProduction });
       }
