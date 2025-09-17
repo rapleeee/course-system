@@ -18,6 +18,7 @@ import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import ChatBox from "./mentorai/ChatBox";
+import { Toaster } from "@/components/ui/sonner";
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -127,6 +128,7 @@ export default function Layout({ children, pageTitle = "Dashboard" }: LayoutProp
               <ChatBox />
 
         <div className="w-full p-8">{children}</div>
+        <Toaster position="top-right" richColors closeButton />
       </main>
     </SidebarProvider>
   );

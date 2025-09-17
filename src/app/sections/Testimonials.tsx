@@ -1,6 +1,7 @@
 "use client"
 import { motion } from "framer-motion"
-import Image from "next/image"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { User } from "lucide-react"
 
 export default function TestimonialsSection() {
   const testimonials = [
@@ -52,13 +53,11 @@ export default function TestimonialsSection() {
               className="bg-white dark:bg-neutral-800 p-6 rounded-2xl shadow-lg"
             >
               <div className="flex items-center gap-4 mb-4">
-                <Image
-                  src={testimonial.image}
-                  alt={testimonial.name}
-                  width={56}
-                  height={56}
-                  className="rounded-full"
-                />
+                <Avatar className="size-14">
+                  <AvatarFallback className="bg-[#D2C1B6] dark:bg-[#1B3C53] text-[#1B3C53] dark:text-[#D2C1B6]">
+                    <User className="w-6 h-6" aria-hidden="true" />
+                  </AvatarFallback>
+                </Avatar>
                 <div>
                   <h3 className="font-semibold">{testimonial.name}</h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">

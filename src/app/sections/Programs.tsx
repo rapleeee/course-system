@@ -3,6 +3,7 @@ import { motion } from "framer-motion"
 import { ArrowRight, BookOpen, Users, Clock, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 
 export default function ProgramSection() {
   const programs = [
@@ -104,10 +105,16 @@ export default function ProgramSection() {
                   ))}
                 </ul>
                 <Button 
+                  asChild
                   className="w-full bg-[#1B3C53] dark:bg-[#F9F3EF] dark:hover:bg-[#D2C1B6]/90 hover:bg-[#456882]/90 cursor-pointer"
                 >
-                  Daftar Sekarang
-                  <ArrowRight className="w-5 h-5 ml-2" />
+                  <Link
+                    href={`/auth/register?program=${encodeURIComponent(program.title)}`}
+                    aria-label={`Daftar sekarang untuk ${program.title}`}
+                  >
+                    Daftar Sekarang
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Link>
                 </Button>
               </div>
             </motion.div>

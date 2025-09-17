@@ -21,7 +21,7 @@ export default function Navbar() {
     },
     { 
       name: 'Daftar Program', 
-      href: '#program', 
+      href: '/#program', 
       icon: <BookOpen className="w-6 h-6" />,
       description: 'Jelajahi program pembelajaran'
     },
@@ -92,6 +92,7 @@ export default function Navbar() {
             <Link
               key={item.name}
               href={item.href}
+              onClick={() => setIsOpen(false)}
               className="flex flex-col items-center p-4 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-center"
             >
               {item.icon}

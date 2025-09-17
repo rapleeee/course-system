@@ -51,6 +51,7 @@ const sidebarMenu = [
       { name: "Tambah Course", icon: <FilePlus2 size={18} />, href: "/admin/addcourses" },
       { name: "Manajemen Course", icon: <BookOpen size={18} />, href: "/admin/managementcourse" },
       { name: "Manajemen Event", icon: <CalendarCheck size={18} />, href: "/admin/events" },
+      { name: "Tugas & Kuis", icon: <Layers size={18} />, href: "/admin/assignments" },
       { name: "Kategori", icon: <Layers size={18} />, href: "/admin/categories" },
       { name: "Pengumuman", icon: <Megaphone size={18} />, href: "/admin/announcements" },
     ],
