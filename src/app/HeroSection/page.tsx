@@ -8,7 +8,7 @@ import Link from 'next/link'
 export default function HeroSection() {
 
   return (
-    <section className="relative overflow-hidden ">
+    <section className="relative overflow-hidden " aria-labelledby="hero-heading">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center min-h-[calc(100vh-80px)] justify-center py-12 sm:py-16">
           <motion.div 
@@ -17,14 +17,10 @@ export default function HeroSection() {
             transition={{ duration: 0.5 }}
             className="space-y-4 text-center"
           >
-            <h1 className="font-bold text-3xl sm:text-4xl md:text-5xl bg-clip-text">
-              #JagoBeneran
-            </h1>
-            <h1 className="font-bold text-3xl sm:text-4xl md:text-5xl bg-clip-text">
-              #KenalDuniaKerja
-            </h1>
-            <h1 className="font-bold text-3xl sm:text-4xl md:text-5xl bg-clip-text">
-              #ProgrammerNextLevel
+            <h1 id="hero-heading" className="font-bold text-3xl sm:text-4xl md:text-5xl bg-clip-text leading-tight">
+              <span className="block">#JagoBeneran</span>
+              <span className="block">#KenalDuniaKerja</span>
+              <span className="block">#ProgrammerNextLevel</span>
             </h1>
           </motion.div>
 
@@ -47,20 +43,19 @@ export default function HeroSection() {
             transition={{ duration: 0.5, delay: 0.4 }}
             className="mt-10 flex flex-col sm:flex-row gap-4"
           >
-            <Link href="/auth/login">
-              <Button 
-                size="lg" 
-                className="bg-[#1B3C53] hover:bg-[#456882] text-white cursor-pointer"
-              >
+            <Button 
+              asChild
+              size="lg" 
+              className="bg-[#1B3C53] hover:bg-[#456882] text-white cursor-pointer"
+            >
+              <Link href="/auth/login" aria-label="Mulai belajar dengan masuk atau daftar akun">
                 Mulai Belajar
                 <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-            <Link href="#program">
-              <Button size="lg" variant="outline" className='cursor-pointer bg-[#D2C1B6] hover:bg-[#D2C1B6]'>
-                Lihat Program
-              </Button>
-            </Link>
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className='cursor-pointer bg-[#D2C1B6] hover:bg-[#D2C1B6]'>
+              <Link href="/#program" aria-label="Lihat program yang tersedia">Lihat Program</Link>
+            </Button>
           </motion.div>
         </div>
       </div>

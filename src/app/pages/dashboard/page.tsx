@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 import Image from "next/image";
 import { Megaphone } from "lucide-react";
+import StreakWidget from "@/components/StreakWidget";
 
 /* === Types === */
 type ProfileData = {
@@ -191,6 +192,9 @@ export default function DashboardPage() {
               </Link>
             </div>
           </div>
+          <div className="mt-4">
+            <StreakWidget />
+          </div>
         </section>
         <section className="space-y-6">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -325,6 +329,9 @@ export default function DashboardPage() {
           <div className="flex flex-wrap gap-2">
             <Link href="/courses" className="rounded-lg border border-neutral-200 px-3 py-2 text-sm transition hover:bg-neutral-50 dark:border-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-800">
               Semua Kelas
+            </Link>
+            <Link href="/pages/assignments" className="rounded-lg border border-neutral-200 px-3 py-2 text-sm transition hover:bg-neutral-50 dark:border-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-800">
+              Tugas & Kuis
             </Link>
             <Link href="/certificates" className="rounded-lg border border-neutral-200 px-3 py-2 text-sm transition hover:bg-neutral-50 dark:border-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-800">
               Sertifikat

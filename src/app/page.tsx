@@ -12,7 +12,7 @@ export default function Home() {
   return (
     <div className="overflow-hidden">
       <Navbar />
-      <main>
+      <main className="scroll-smooth">
         <HeroSection />
         <FeaturesSection />
         <ProgramSection />

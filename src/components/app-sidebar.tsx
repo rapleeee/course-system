@@ -56,7 +56,7 @@ export function AppSidebar() {
       label: "Pembelajaran",
       items: [
         { title: "Kelas", url: "/pages/courses", icon: ClipboardList },
-        { title: "Tugas & Kuis", url: "/pages/tasks", icon: FileText },
+        { title: "Tugas & Kuis", url: "/pages/assignments", icon: FileText },
         { title: "Progress Belajar", url: "/pages/progress", icon: Rocket },
         { title: "Leaderboard", url: "/pages/leaderboard", icon: Medal },
         { title: "Leaderboard SMK Pesat", url: "/pages/mentoraxpesat", icon: School },
