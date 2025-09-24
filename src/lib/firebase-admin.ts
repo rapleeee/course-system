@@ -1,6 +1,7 @@
 // src/lib/firebase-admin.ts
 import { getApps, initializeApp, cert, applicationDefault, App } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
 
 /**
  * Pilih salah satu mekanisme kredensial:
@@ -38,3 +39,4 @@ function initAdmin(): App {
 
 const adminApp = initAdmin();
 export const adminDb = getFirestore(adminApp);
+export const adminStorage = getStorage(adminApp);

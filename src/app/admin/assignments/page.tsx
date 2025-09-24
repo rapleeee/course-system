@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { ChangeEvent } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { db, auth } from "@/lib/firebase";
 import { addDoc, collection, onSnapshot, orderBy, query, serverTimestamp, Timestamp, updateDoc, deleteDoc, doc } from "firebase/firestore";
@@ -12,6 +13,8 @@ import { toast } from "sonner";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
+import { Label } from "@/components/ui/label";
+import { parseDocxFile, type DocxParsedQuestion } from "@/lib/assignments/docx-import";
 
 type QuizQuestion = {
   prompt: string;
@@ -136,6 +139,29 @@ function validateQuizDraft(drafts: QuestionDraft[], autoGrading: boolean): { ok:
   }
 
   return { ok: true };
+}
+
+function docxQuestionsToDrafts(docQuestions: DocxParsedQuestion[]): QuestionDraft[] {
+  return docQuestions.map((question) => {
+    if (question.type === "text") {
+      return createQuestionDraft({
+        prompt: question.prompt,
+        type: "text",
+      });
+    }
+
+    const correctIndices = question.options.reduce<number[]>((acc, option, idx) => {
+      if (option.correct) acc.push(idx);
+      return acc;
+    }, []);
+
+    return createQuestionDraft({
+      prompt: question.prompt,
+      type: "mcq",
+      options: question.options.map((option) => option.text),
+      correctIndices,
+    });
+  });
 }
 
 function QuizQuestionEditor({
@@ -277,6 +303,26 @@ function QuizQuestionEditor({
   );
 }
 
+function DocxImportHelp({ context }: { context: "create" | "edit" }) {
+  const replaceText =
+    context === "create"
+      ? "Impor menggantikan daftar pertanyaan dan otomatis mengaktifkan mode kuis."
+      : "Impor menggantikan pertanyaan yang sedang diedit dan memastikan mode kuis aktif.";
+
+  return (
+    <div className="rounded-md border border-dashed border-gray-200 bg-white/70 p-3 text-xs text-gray-600 dark:border-neutral-700 dark:bg-neutral-900/40 dark:text-gray-400 space-y-1">
+      <p className="font-semibold text-gray-700 dark:text-gray-200">Panduan cepat impor Word</p>
+      <ul className="list-disc space-y-1 pl-4">
+        <li>Unduh template agar struktur `[PERTANYAAN]`, `Tipe`, dan `Opsi` sesuai.</li>
+        <li>Gunakan `mcq` untuk pilihan ganda atau `text` untuk jawaban singkat.</li>
+        <li>Tandai jawaban benar dengan `[x]` di depan opsi, sisakan kosong untuk jawaban salah.</li>
+        <li>Simpan dokumen sebagai `.docx` sebelum melakukan impor di sini.</li>
+        <li>{replaceText}</li>
+      </ul>
+    </div>
+  );
+}
+
 export default function AdminAssignmentsPage() {
   const MySwal = withReactContent(Swal);
   const { user } = useAuth();
@@ -295,6 +341,9 @@ export default function AdminAssignmentsPage() {
   const [editPoints, setEditPoints] = useState<number>(10);
   const [editAutoGrading, setEditAutoGrading] = useState(false);
   const [editQuestions, setEditQuestions] = useState<QuestionDraft[]>([]);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
+  const importModeRef = useRef<"create" | "edit">("create");
+  const [importingDoc, setImportingDoc] = useState(false);
 
   useEffect(() => {
     const q = query(collection(db, "assignments"), orderBy("createdAt", "desc"));
@@ -325,6 +374,46 @@ export default function AdminAssignmentsPage() {
       setEditQuestions([createQuestionDraft()]);
     }
   }, [editing, editType, editQuestions.length]);
+
+  const openImportDialog = (mode: "create" | "edit") => {
+    importModeRef.current = mode;
+    importInputRef.current?.click();
+  };
+
+  const handleImportFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".docx")) {
+      toast.error("Format tidak didukung. Gunakan file .docx dari template.");
+      return;
+    }
+    try {
+      setImportingDoc(true);
+      const parsedQuestions = await parseDocxFile(file);
+      const drafts = docxQuestionsToDrafts(parsedQuestions);
+      if (drafts.length === 0) {
+        toast.error("Tidak ada pertanyaan yang ditemukan dalam dokumen.");
+        return;
+      }
+      const hasMcq = parsedQuestions.some((question) => question.type === "mcq");
+      if (importModeRef.current === "edit") {
+        setEditType("quiz");
+        setEditQuestions(drafts);
+        setEditAutoGrading((prev) => (prev && hasMcq));
+      } else {
+        setType("quiz");
+        setQuestions(drafts);
+        setAutoGrading((prev) => (prev && hasMcq));
+      }
+      toast.success(`Berhasil mengimpor ${drafts.length} pertanyaan dari dokumen.`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast.error(message);
+    } finally {
+      setImportingDoc(false);
+    }
+  };
 
   const createQuizValidation = useMemo(() => {
     if (type !== "quiz") return { ok: true } as const;
@@ -439,7 +528,14 @@ export default function AdminAssignmentsPage() {
     if (!resConfirm.isConfirmed) return;
     try {
       setBusy(true);
-      await MySwal.fire({ title: "Menghapus...", allowOutsideClick: false, didOpen: () => { MySwal.showLoading(); } });
+      void MySwal.fire({
+        title: "Menghapus...",
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        didOpen: () => {
+          MySwal.showLoading();
+        },
+      });
       const token = await auth.currentUser?.getIdToken();
       const res = await fetch(`/api/assignments/${id}`, {
         method: "DELETE",
@@ -451,9 +547,11 @@ export default function AdminAssignmentsPage() {
         const errMsg = json?.error || "Gagal menghapus dari server";
         throw new Error(errMsg);
       }
+      MySwal.close();
       setList((prev) => prev.filter((x) => x.id !== id));
       await MySwal.fire({ title: "Berhasil", text: "Tugas/kuis telah dihapus.", icon: "success" });
     } catch (e) {
+      MySwal.close();
       try {
         // fallback client-side delete jika API belum siap
         await deleteDoc(doc(db, "assignments", id));
@@ -471,6 +569,13 @@ export default function AdminAssignmentsPage() {
 
   return (
     <AdminLayout pageTitle="Tugas & Kuis">
+      <input
+        ref={importInputRef}
+        type="file"
+        accept=".docx"
+        className="hidden"
+        onChange={handleImportFileChange}
+      />
       <div className="max-w-full p-2 sm:p-0 space-y-8">
         <h1 className="text-2xl font-bold">Kelola Tugas & Kuis</h1>
 
@@ -478,7 +583,11 @@ export default function AdminAssignmentsPage() {
           <div className="font-semibold">Buat Baru</div>
           <Input placeholder="Judul" value={title} onChange={(e) => setTitle(e.target.value)} />
           <Textarea placeholder="Deskripsi (opsional)" value={description} onChange={(e) => setDescription(e.target.value)} />
-          <div className="flex flex-wrap gap-3 items-center">
+          <div className="flex flex-wrap gap-3 items-start md:items-center">
+             <div className="flex flex-col gap-1">
+              <Label htmlFor="assignment-points" className="text-xs font-medium">
+                Bobot nilai (poin total)
+              </Label>
             <select
               className="border rounded-md px-3 py-2"
               value={type}
@@ -487,11 +596,51 @@ export default function AdminAssignmentsPage() {
               <option value="task">Tugas (review manual)</option>
               <option value="quiz">Kuis (bisa auto-grade)</option>
             </select>
-            <Input type="number" value={points} onChange={(e) => setPoints(parseInt(e.target.value || "0", 10))} className="w-32" />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="assignment-points" className="text-xs font-medium">
+                Bobot nilai (poin total)
+              </Label>
+              <Input
+                id="assignment-points"
+                type="number"
+                placeholder="misal: 100"
+                value={points}
+                onChange={(e) => setPoints(parseInt(e.target.value || "0", 10))}
+                className="w-36"
+              />
+            </div>
+             <div className="flex flex-col gap-1">
+              <Label htmlFor="assignment-points" className="text-xs font-medium">
+                &nbsp;
+              </Label>
             <Button disabled={!canSubmit} onClick={handleCreate}>Simpan</Button>
+            </div>
           </div>
+          <p className="text-xs text-gray-500">
+            Bobot nilai menentukan skor maksimum yang bisa didapat peserta untuk tugas/kuis ini.
+          </p>
           {type === "quiz" ? (
             <div className="space-y-3 rounded-lg border p-3 bg-neutral-50 dark:bg-neutral-900/40">
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <Button variant="outline" size="sm" asChild>
+                  <a href="/api/assignments/template" target="_blank" rel="noopener noreferrer">
+                    Unduh template Word
+                  </a>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={importingDoc || busy}
+                  onClick={() => openImportDialog("create")}
+                >
+                  {importingDoc ? "Memproses dokumen..." : "Import dari Word (.docx)"}
+                </Button>
+                <span className="text-xs text-gray-500">
+                  Impor menggantikan daftar pertanyaan dan otomatis mengaktifkan mode kuis.
+                </span>
+              </div>
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -502,6 +651,7 @@ export default function AdminAssignmentsPage() {
                 <span>Penilaian otomatis (beri nilai langsung jika jawaban benar).</span>
               </label>
               <QuizQuestionEditor questions={questions} onChange={setQuestions} />
+              <DocxImportHelp context="create" />
             </div>
           ) : null}
         </div>
@@ -537,7 +687,7 @@ export default function AdminAssignmentsPage() {
             <div className="space-y-4">
               <Input placeholder="Judul" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
               <Textarea placeholder="Deskripsi" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
-              <div className="flex flex-wrap gap-3 items-center">
+              <div className="flex flex-wrap gap-3 items-start md:items-center">
                 <select
                   className="border rounded-md px-3 py-2"
                   value={editType}
@@ -546,10 +696,44 @@ export default function AdminAssignmentsPage() {
                   <option value="task">Tugas</option>
                   <option value="quiz">Kuis</option>
                 </select>
-                <Input type="number" className="w-32" value={editPoints} onChange={(e) => setEditPoints(parseInt(e.target.value || "0", 10))} />
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="assignment-points-edit" className="text-xs font-medium">
+                    Bobot nilai (poin total)
+                  </Label>
+                  <Input
+                    id="assignment-points-edit"
+                    type="number"
+                    placeholder="misal: 100"
+                    className="w-36"
+                    value={editPoints}
+                    onChange={(e) => setEditPoints(parseInt(e.target.value || "0", 10))}
+                  />
+                </div>
               </div>
+              <p className="text-xs text-gray-500">
+                Perubahan bobot nilai akan mengatur ulang skor maksimum untuk tugas/kuis ini.
+              </p>
               {editType === "quiz" ? (
                 <div className="space-y-3 rounded-lg border p-3 bg-neutral-50 dark:bg-neutral-900/40">
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <Button variant="outline" size="sm" asChild>
+                      <a href="/api/assignments/template" target="_blank" rel="noopener noreferrer">
+                        Unduh template Word
+                      </a>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={importingDoc || busy}
+                      onClick={() => openImportDialog("edit")}
+                    >
+                      {importingDoc ? "Memproses dokumen..." : "Import dari Word (.docx)"}
+                    </Button>
+                    <span className="text-xs text-gray-500">
+                      Impor menggantikan pertanyaan yang sedang diedit dan memastikan mode kuis aktif.
+                    </span>
+                  </div>
                   <label className="flex items-center gap-2 text-sm">
                     <input
                       type="checkbox"
@@ -560,6 +744,7 @@ export default function AdminAssignmentsPage() {
                     <span>Penilaian otomatis (beri nilai langsung jika jawaban benar).</span>
                   </label>
                   <QuizQuestionEditor questions={editQuestions} onChange={setEditQuestions} />
+                  <DocxImportHelp context="edit" />
                 </div>
               ) : null}
               <div className="flex items-center justify-end gap-2">
