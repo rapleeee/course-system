@@ -57,6 +57,7 @@ export default function DashboardPage() {
   const [myCourses, setMyCourses] = useState<Course[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [busy, setBusy] = useState(false);
+  const [certificateCount, setCertificateCount] = useState(0);
 
   const fetchMyCourses = useCallback(async (courseIds: string[]) => {
     try {
@@ -105,6 +106,21 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const fetchCertificateCount = useCallback(async (uid: string) => {
+    try {
+      const certificateQuery = fsQuery(
+        collection(db, "certificates"),
+        where("userId", "==", uid),
+        where("status", "==", "issued")
+      );
+      const snap = await getDocs(certificateQuery);
+      setCertificateCount(snap.size);
+    } catch (err) {
+      console.warn("Gagal menghitung sertifikat:", err);
+      setCertificateCount(0);
+    }
+  }, []);
+
   const fetchProfile = useCallback(async (uid: string) => {
     try {
       setBusy(true);
@@ -115,17 +131,18 @@ export default function DashboardPage() {
         await Promise.all([
           fetchMyCourses(data.claimedCourses ?? []),
           fetchAnnouncements(),
+          fetchCertificateCount(uid),
         ]);
       } else {
         setProfile(null);
-        await Promise.all([fetchMyCourses([]), fetchAnnouncements()]);
+        await Promise.all([fetchMyCourses([]), fetchAnnouncements(), fetchCertificateCount(uid)]);
       }
     } catch (e) {
       console.error("Gagal mengambil data profil:", e);
     } finally {
       setBusy(false);
     }
-  }, [fetchAnnouncements, fetchMyCourses]);
+  }, [fetchAnnouncements, fetchMyCourses, fetchCertificateCount]);
 
   useEffect(() => {
     if (user?.uid) {
@@ -151,7 +168,8 @@ export default function DashboardPage() {
   }
 
   const totalKelas = profile?.claimedCourses?.length ?? 0;
-  const totalSertifikat = profile?.claimedCertificates?.length ?? 0;
+  const legacyCertificateCount = profile?.claimedCertificates?.length ?? 0;
+  const totalSertifikat = certificateCount || legacyCertificateCount;
   const ongoingCourses = totalKelas;
   const lastCourseLink = profile?.lastCourseId ?? profile?.claimedCourses?.[0] ?? null;
 

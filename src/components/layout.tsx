@@ -3,6 +3,8 @@ import React, { useState, useEffect } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ModeToggle } from "./ui/ModeToogle";
+import UserNotificationBell from "@/components/notifications/UserNotificationBell";
+import NotificationListener from "@/components/notifications/NotificationListener";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -72,6 +74,7 @@ export default function Layout({ children, pageTitle = "Dashboard" }: LayoutProp
     <SidebarProvider>
       <AppSidebar />
       <main className="w-full">
+        <NotificationListener />
         <div className="flex items-center p-4 w-full border-b justify-between">
           <div className="flex items-center">
             <SidebarTrigger />
@@ -80,6 +83,7 @@ export default function Layout({ children, pageTitle = "Dashboard" }: LayoutProp
           </div>
 
           <div className="flex items-center gap-4">
+            <UserNotificationBell />
             <ModeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger className="outline-none">
@@ -112,7 +116,7 @@ export default function Layout({ children, pageTitle = "Dashboard" }: LayoutProp
                   <Link href="/pages/courses">Kelas Saya</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/pages/courses">Sertifikat Saya</Link>
+                  <Link href="/certificates">Sertifikat Saya</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/pages/settings">Pengaturan</Link>
