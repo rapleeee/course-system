@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
+import ConsultWidget from "@/components/chat/ConsultWidget";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -75,7 +77,6 @@ export const metadata: Metadata = {
       },
     ],
   },
-  themeColor: '#ffffff',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -101,6 +102,10 @@ export const metadata: Metadata = {
     address: false,
     email: false,
   },
+};
+
+export const viewport = {
+  themeColor: '#ffffff',
 };
 
 export default function RootLayout({
@@ -166,6 +171,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
+          <ConsultWidget />
         </ThemeProvider>
       </body>
     </html>

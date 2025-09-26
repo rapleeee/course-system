@@ -1,25 +1,25 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   addDoc,
   collection,
   collectionGroup,
+  deleteDoc,
   doc,
   getCountFromServer,
   getDoc,
-  getDocs,
   onSnapshot,
   query,
   serverTimestamp,
   updateDoc,
-  where,
   Timestamp,
 } from "firebase/firestore";
 import { useAuth } from "@/lib/useAuth";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { auth, db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
@@ -90,7 +90,8 @@ export default function AdminCertificatesPage() {
   const [statusFilter, setStatusFilter] = useState<CertificateDoc["status"] | "all">("all");
   const courseCacheRef = useRef(new Map<string, CourseInfo>());
   const userCacheRef = useRef(new Map<string, UserInfo>());
-  const [backfilling, setBackfilling] = useState(false);
+  const [viewUser, setViewUser] = useState<{ userId: string; name: string; email?: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<CertificateRecord | null>(null);
 
   useEffect(() => {
     const certificatesQuery = query(collection(db, "certificates"));
@@ -215,43 +216,11 @@ export default function AdminCertificatesPage() {
       });
   }, [certificates, searchTerm, statusFilter]);
 
-  const handleBackfillMissingPdfs = useCallback(async () => {
-    if (!user?.uid) {
-      toast.error("Anda harus login sebagai admin.");
-      return;
-    }
-    try {
-      setBackfilling(true);
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error("Auth token missing");
+  const certificatesForViewedUser = useMemo(() => {
+    if (!viewUser) return [] as CertificateRecord[];
+    return certificates.filter((cert) => cert.userId === viewUser.userId);
+  }, [certificates, viewUser]);
 
-      const snapshot = await getDocs(
-        query(collection(db, "certificates"), where("status", "==", "issued"))
-      );
-
-      const missing = snapshot.docs
-        .map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as CertificateDoc) }))
-        .filter((cert) => !cert.storageUrl);
-
-      for (const cert of missing) {
-        const res = await fetch(`/api/certificates/${cert.id}/generate`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        if (!res.ok) {
-          throw new Error(data?.error || `Gagal mengunggah PDF untuk ${cert.studentName}`);
-        }
-      }
-
-      toast.success("PDF sertifikat berhasil diperbarui.");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      toast.error(message);
-    } finally {
-      setBackfilling(false);
-    }
-  }, [user?.uid]);
 
   const handleGenerateCertificate = async (candidate: EligibleCandidate) => {
     if (!user?.uid) {
@@ -331,6 +300,19 @@ export default function AdminCertificatesPage() {
     }
   };
 
+  const confirmDeleteCertificate = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteDoc(doc(db, "certificates", deleteTarget.id));
+      toast.success("Sertifikat berhasil dihapus. Anda dapat menerbitkan ulang dari daftar kandidat.");
+    } catch (err) {
+      console.error("Failed to delete certificate", err);
+      toast.error("Gagal menghapus sertifikat.");
+    } finally {
+      setDeleteTarget(null);
+    }
+  };
+
   const statusFilters: { value: CertificateDoc["status"] | "all"; label: string }[] = [
     { value: "all", label: "Semua" },
     { value: "issued", label: "Terbit" },
@@ -341,40 +323,32 @@ export default function AdminCertificatesPage() {
   return (
     <AdminLayout pageTitle="Manajemen Sertifikat">
       <div className="space-y-8">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Manajemen Sertifikat</h1>
-            <p className="text-sm text-muted-foreground">
-              Terbitkan dokumentasi penyelesaian kelas, pantau status sertifikat, dan kelola pencabutan.
-            </p>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">Manajemen Sertifikat</h1>
+              <p className="text-sm text-muted-foreground">
+                Terbitkan dokumentasi penyelesaian kelas, pantau status sertifikat, dan kelola pencabutan.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="Cari nama siswa, kelas, atau kode..."
+                className="w-[260px]"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setSearchTerm("");
+                  setStatusFilter("all");
+                }}
+              >
+                Reset
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Input
-              placeholder="Cari nama siswa, kelas, atau kode..."
-              className="w-[260px]"
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setSearchTerm("");
-                setStatusFilter("all");
-              }}
-            >
-              Reset
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={backfilling}
-              onClick={handleBackfillMissingPdfs}
-            >
-              {backfilling ? "Mengunggah PDF..." : "Generate ulang PDF yang hilang"}
-            </Button>
-          </div>
-        </div>
 
         <section className="space-y-4">
           <div className="flex items-center justify-between gap-3">
@@ -534,11 +508,15 @@ export default function AdminCertificatesPage() {
                             <ShieldOff className="mr-2 h-4 w-4" /> Cabut
                           </Button>
                         )}
-                        {!cert.storageUrl ? (
-                          <Button size="sm" variant="outline" onClick={() => requestCertificatePdf(cert.id)}>
-                            Generate PDF
-                          </Button>
-                        ) : null}
+                        <Button size="sm" variant="outline" onClick={() => requestCertificatePdf(cert.id)}>
+                          {cert.storageUrl ? "Perbarui PDF" : "Generate PDF"}
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setDeleteTarget(cert)}>
+                          Hapus
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setViewUser({ userId: cert.userId, name: cert.studentName, email: cert.studentEmail })}>
+                          Lihat sertifikat pengguna
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -548,6 +526,84 @@ export default function AdminCertificatesPage() {
           )}
         </section>
       </div>
+      {viewUser && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+          onClick={() => setViewUser(null)}
+        >
+          <div
+            className="w-full max-w-3xl space-y-4 rounded-xl bg-background p-6 shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-lg font-semibold">Sertifikat milik {viewUser.name}</h3>
+                {viewUser.email ? (
+                  <p className="text-xs text-muted-foreground">{viewUser.email}</p>
+                ) : null}
+              </div>
+              <Button variant="ghost" onClick={() => setViewUser(null)}>
+                Tutup
+              </Button>
+            </div>
+            {certificatesForViewedUser.length === 0 ? (
+              <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                Belum ada sertifikat untuk pengguna ini.
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nomor</TableHead>
+                    <TableHead>Verifikasi</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Aksi</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {certificatesForViewedUser.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>{item.certificateNumber}</TableCell>
+                      <TableCell>{item.verificationCode}</TableCell>
+                      <TableCell>
+                        <Badge className={STATUS_COLOR[item.status]}>{STATUS_LABEL[item.status]}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button size="sm" variant="outline" onClick={() => requestCertificatePdf(item.id)}>
+                            Perbarui PDF
+                          </Button>
+                          {item.storageUrl ? (
+                            <a
+                              className="text-sm text-primary underline-offset-2 hover:underline"
+                              href={item.storageUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              Lihat PDF
+                            </a>
+                          ) : null}
+                          <Button size="sm" variant="ghost" onClick={() => setDeleteTarget(item)}>
+                            Hapus
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </div>
+      )}
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="Hapus sertifikat?"
+        description={deleteTarget ? `Sertifikat atas nama ${deleteTarget.studentName} untuk ${deleteTarget.courseTitle} akan dihapus.` : undefined}
+        confirmLabel="Hapus"
+        onConfirm={confirmDeleteCertificate}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </AdminLayout>
   );
 }
