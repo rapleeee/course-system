@@ -1,4 +1,5 @@
 import PDFDocument from "pdfkit";
+import QRCode from "qrcode";
 
 export type CertificatePdfPayload = {
   studentName: string;
@@ -14,173 +15,102 @@ export type CertificatePdfPayload = {
 };
 
 export async function renderCertificatePdf(payload: CertificatePdfPayload): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({
-      size: "A4",
-      layout: "landscape",
-      margins: { top: 40, bottom: 40, left: 50, right: 50 },
-    });
-    const chunks: Uint8Array[] = [];
+  const verificationUrl = `${payload.verificationBaseUrl.replace(/\/$/, "")}/${payload.verificationCode}`;
+  const qrBuffer = await QRCode.toBuffer(verificationUrl, { type: "png", scale: 6, margin: 1 });
 
-    doc.on("data", (chunk) => chunks.push(chunk));
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: "A4", layout: "landscape", margins: { top: 60, bottom: 60, left: 70, right: 70 } });
+    const buffers: Buffer[] = [];
+    doc.on("data", (chunk) => buffers.push(Buffer.from(chunk)));
     doc.on("error", reject);
-    doc.on("end", () => {
-      const buffer = Buffer.concat(chunks.map((chunk) => Buffer.from(chunk)));
-      resolve(buffer);
-    });
+    doc.on("end", () => resolve(Buffer.concat(buffers)));
 
     const brandColor = "#0d3b66";
     const accentColor = "#f4a261";
-    const deepNavy = "#14213d";
-    const softSlate = "#475569";
+    const textColor = "#14213d";
+    const subtleText = "#475569";
 
-    const pageWidth = doc.page.width;
-    const pageHeight = doc.page.height;
-    const contentStartX = doc.page.margins.left;
-    const usableHeight = pageHeight - doc.page.margins.top - doc.page.margins.bottom;
-
-    const gradient = doc.linearGradient(0, 0, pageWidth, pageHeight);
-    gradient.stop(0, "#f6f7fb");
-    gradient.stop(1, "#dbeafe");
-    doc.rect(0, 0, pageWidth, pageHeight).fill(gradient);
-
-    doc.lineWidth(4)
-      .strokeColor(accentColor)
-      .roundedRect(18, 18, pageWidth - 36, pageHeight - 36, 18)
-      .stroke();
-
-    const bandWidth = 220;
-    const bandX = contentStartX - 15;
-    const bandY = doc.page.margins.top - 15;
-    const bandHeight = usableHeight + 30;
-    const bandGradient = doc.linearGradient(bandX, 0, bandX + bandWidth, 0);
-    bandGradient.stop(0, "#0d3b66");
-    bandGradient.stop(1, "#14497f");
-    doc.rect(bandX, bandY, bandWidth, bandHeight).fill(bandGradient);
+    const panelWidth = 190;
+    const panelX = doc.page.margins.left - 50;
+    const panelY = doc.page.margins.top - 30;
+    const panelHeight = doc.page.height - doc.page.margins.top - doc.page.margins.bottom + 60;
 
     doc.save();
-    doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(24)
-      .text("MENTORA", bandX + 30, bandY + 44);
-    doc.font("Helvetica").fontSize(10).fillColor("#cbd5f5")
-      .text("Course System", bandX + 30, bandY + 76);
-    doc.fillOpacity(0.12)
-      .circle(bandX + bandWidth / 2, bandY + bandHeight - 120, 92)
-      .fill("#ffffff");
+    doc.rect(panelX, panelY, panelWidth, panelHeight).fill(brandColor);
+    doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(24).text("MENTORAXPESAT", panelX + 24, doc.page.height - doc.page.margins.bottom - 54, {
+      width: panelWidth - 40,
+    });
     doc.restore();
 
-    const contentX = bandX + bandWidth + 30;
-    const contentWidth = pageWidth - contentX - doc.page.margins.right;
+    const contentX = panelX + panelWidth + 36;
+    const contentWidth = doc.page.width - contentX - doc.page.margins.right;
+    let y = doc.page.height - doc.page.margins.top;
 
-    doc.fillColor(brandColor).font("Helvetica-Bold").fontSize(30)
-      .text("SERTIFIKAT PENGHARGAAN", contentX, doc.page.margins.top, {
-        width: contentWidth,
+    doc.fillColor(textColor).font("Helvetica-Bold").fontSize(30).text("SERTIFIKAT PENGHARGAAN", contentX, y, { width: contentWidth });
+    y -= 36;
+
+    const tagline = payload.backgroundTagline || "Mentoraxpesat memberikan apresiasi atas dedikasi dan konsistensi belajar.";
+    doc.font("Helvetica").fontSize(12).fillColor(subtleText).text(tagline, contentX, y, { width: contentWidth });
+    y -= 48;
+
+    doc.fontSize(11).fillColor(subtleText).text("Diberikan kepada", contentX, y);
+    y -= 20;
+    doc.font("Helvetica-Bold").fontSize(32).fillColor(textColor).text(payload.studentName, contentX, y, { width: contentWidth });
+    y -= 40;
+
+    doc.font("Helvetica").fontSize(14).fillColor(subtleText).text("atas keberhasilannya menyelesaikan", contentX, y);
+    doc.font("Helvetica-Bold").fontSize(20).fillColor(accentColor).text(payload.courseTitle, contentX + 200, y);
+    y -= 52;
+
+    doc.font("Helvetica").fontSize(11).fillColor(subtleText).text("Nomor Sertifikat", contentX, y);
+    doc.font("Helvetica-Bold").fontSize(13).fillColor(textColor).text(payload.certificateNumber, contentX, y - 18);
+
+    doc.font("Helvetica").fillColor(subtleText).text("Kode Verifikasi", contentX + 220, y);
+    doc.font("Helvetica-Bold").fillColor(textColor).text(payload.verificationCode, contentX + 220, y - 18);
+
+    doc.font("Helvetica").fillColor(subtleText).text(`Diterbitkan: ${payload.issuedDateText}`, contentX + 420, y);
+    y -= 60;
+
+    const achievements = payload.achievements?.length ? payload.achievements : [];
+    if (achievements.length > 0) {
+      doc.font("Helvetica-Bold").fontSize(12).fillColor(textColor).text("Poin Pencapaian", contentX, y);
+      y -= 18;
+      doc.font("Helvetica").fontSize(10).fillColor(subtleText);
+      achievements.slice(0, 4).forEach((achievement) => {
+        doc.text(`• ${achievement}`, contentX, y, { width: contentWidth });
+        y -= 16;
       });
+      y -= 12;
+    }
 
-    doc.moveDown(0.6);
-    doc.fontSize(12).font("Helvetica").fillColor(softSlate)
-      .text(
-        payload.backgroundTagline ||
-          "Mentora Course System menyatakan bahwa partisipan berikut telah menuntaskan seluruh tahapan pembelajaran dengan hasil yang sangat baik.",
-        {
-          width: contentWidth,
-        }
-      );
-
-    const highlightY = doc.y + 14;
-    doc.save();
-    doc.rect(contentX, highlightY, contentWidth, 110)
-      .fillOpacity(0.08)
-      .fill(brandColor)
-      .restore();
-
-    doc.font("Helvetica").fontSize(11).fillColor(softSlate)
-      .text("Diberikan kepada", contentX + 24, highlightY + 18);
-
-    doc.font("Helvetica-Bold").fontSize(36).fillColor(deepNavy)
-      .text(payload.studentName, contentX + 24, highlightY + 40, {
-        width: contentWidth - 48,
-      });
-
-    doc.font("Helvetica").fontSize(14).fillColor(softSlate)
-      .text("atas keberhasilannya menyelesaikan", contentX + 24, highlightY + 90);
-
-    doc.font("Helvetica-Bold").fontSize(26).fillColor(brandColor)
-      .text(payload.courseTitle, contentX + 260, highlightY + 82, {
-        width: contentWidth - 284,
-      });
-
-    const detailsTop = highlightY + 150;
-    doc.fontSize(11).font("Helvetica").fillColor(softSlate)
-      .text("Nomor Sertifikat", contentX, detailsTop)
-      .font("Helvetica-Bold").fillColor(deepNavy)
-      .text(payload.certificateNumber, contentX, detailsTop + 16);
-
-    doc.font("Helvetica").fillColor(softSlate)
-      .text("Kode Verifikasi", contentX + 220, detailsTop)
-      .font("Helvetica-Bold").fillColor(deepNavy)
-      .text(payload.verificationCode, contentX + 220, detailsTop + 16);
-
-    doc.font("Helvetica").fillColor(softSlate)
-      .text("Diterbitkan", contentX + 440, detailsTop)
-      .font("Helvetica-Bold").fillColor(deepNavy)
-      .text(payload.issuedDateText, contentX + 440, detailsTop + 16);
-
-    const achievements = payload.achievements?.length
-      ? payload.achievements
-      : [
-          "Menuntaskan seluruh modul pembelajaran dan evaluasi akhir.",
-          "Menunjukkan pemahaman materi melalui tugas dan refleksi.",
-          "Menjaga konsistensi dan partisipasi aktif selama program.",
-        ];
-
-    const achievementY = detailsTop + 60;
-    doc.font("Helvetica-Bold").fontSize(12).fillColor(deepNavy)
-      .text("Sorotan Pencapaian", contentX, achievementY);
-
-    doc.font("Helvetica").fontSize(10).fillColor(softSlate);
-    achievements.forEach((achievement, index) => {
-      doc.text(`• ${achievement}`, contentX, achievementY + 20 + index * 16, {
-        width: contentWidth - 48,
-      });
+    const qrSize = 100;
+    const qrX = doc.page.width - doc.page.margins.right - qrSize;
+    const qrY = doc.page.height - doc.page.margins.top - qrSize - 20;
+    doc.image(qrBuffer, qrX, qrY, { width: qrSize, height: qrSize });
+    doc.font("Helvetica").fontSize(8).fillColor(subtleText).text("Scan untuk verifikasi", qrX, qrY - 12, {
+      width: qrSize,
+      align: "center",
     });
 
     if (payload.issuerName) {
-      const signatureY = pageHeight - doc.page.margins.bottom - 110;
-      const sigWidth = 200;
-      doc.lineWidth(1)
-        .strokeColor(brandColor)
-        .moveTo(contentX, signatureY)
-        .lineTo(contentX + sigWidth, signatureY)
+      const sigY = doc.page.margins.bottom + 80;
+      const sigWidth = 220;
+      const sigX = contentX;
+
+      doc
+        .moveTo(sigX, sigY)
+        .lineTo(sigX + sigWidth, sigY)
+        .strokeColor(subtleText)
+        .lineWidth(1)
         .stroke();
-
-      doc.font("Helvetica-Bold").fontSize(12).fillColor(deepNavy)
-        .text(payload.issuerName, contentX, signatureY + 8, {
-          width: sigWidth,
-        });
+      doc.font("Helvetica-Bold").fontSize(12).fillColor(textColor).text(payload.issuerName, sigX, sigY - 14);
       if (payload.issuerRole) {
-        doc.font("Helvetica").fontSize(10).fillColor(softSlate)
-          .text(payload.issuerRole, contentX, signatureY + 26, {
-            width: sigWidth,
-          });
+        doc.font("Helvetica").fontSize(10).fillColor(subtleText).text(payload.issuerRole, sigX, sigY - 30);
       }
-
-      doc.font("Helvetica").fontSize(10).fillColor(softSlate)
-        .text(
-          "Dokumen ini berlaku sebagai pengakuan kompetensi dan dapat diverifikasi secara digital.",
-          contentX + sigWidth + 48,
-          signatureY - 4,
-          {
-            width: contentWidth - sigWidth - 80,
-          }
-        );
     }
 
-    const verificationUrl = `${payload.verificationBaseUrl.replace(/\/$/, "")}/${payload.verificationCode}`;
-    const footerY = pageHeight - doc.page.margins.bottom - 26;
-    doc.font("Helvetica").fontSize(9).fillColor(softSlate)
-      .text("Validasi sertifikat di:", contentX, footerY, { continued: true });
-    doc.font("Helvetica-Bold").fillColor(accentColor)
-      .text(verificationUrl, { continued: false });
+    doc.font("Helvetica").fontSize(9).fillColor(subtleText).text("Validasi sertifikat di:", contentX, doc.page.margins.bottom - 10);
+    doc.font("Helvetica-Bold").fillColor(accentColor).text(verificationUrl, contentX + 120, doc.page.margins.bottom - 10);
 
     doc.end();
   });

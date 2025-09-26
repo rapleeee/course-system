@@ -1,5 +1,5 @@
 "use client"
-import { AlignLeft, Phone, X, Home, BookOpen, Building2, Users, Briefcase } from 'lucide-react'
+import { AlignLeft, Phone, X, Home, BookOpen, Building2, Users, Route } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { ModeToggle } from '../ui/ModeToogle'
 import Link from 'next/link'
@@ -26,6 +26,12 @@ export default function Navbar() {
       description: 'Jelajahi program pembelajaran'
     },
     { 
+      name: 'Roadmap Belajar', 
+      href: '/roadmap', 
+      icon: <Route className="w-6 h-6" />,
+      description: 'Lihat silabus setiap jalur'
+    },
+    { 
       name: 'Kantor dan Sekolah', 
       href: '/navbars/location', 
       icon: <Building2 className="w-6 h-6" />,
@@ -36,12 +42,6 @@ export default function Navbar() {
       href: '/navbars/about', 
       icon: <Users className="w-6 h-6" />,
       description: 'Kenali kami lebih dekat'
-    },
-    { 
-      name: 'Karir', 
-      href: '/navbars/career', 
-      icon: <Briefcase className="w-6 h-6" />,
-      description: 'Bergabung dengan tim kami'
     },
   ]
 
