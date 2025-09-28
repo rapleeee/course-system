@@ -1,11 +1,12 @@
 "use client";
 import Navbar from "@/components/layouts/Navbar";
-import HeroSection from "./HeroSection/page";
+import HeroSection from "./sections/HeroSection";
 import FeaturesSection from "./sections/Features";
 import ProgramSection from "./sections/Programs";
 import TestimonialsSection from "./sections/Testimonials";
 import CTASection from "./sections/CTA";
 import FAQSection from "./sections/FAQ";
+import ConsultWidget from "@/components/chat/ConsultWidget";
 
 export default function Home() {
   
@@ -20,6 +21,7 @@ export default function Home() {
         <FAQSection />
         <CTASection />
       </main>
+      <ConsultWidget />
     </div>
   );
 }

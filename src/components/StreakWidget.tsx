@@ -14,6 +14,7 @@ type StreakDoc = {
   lastClaimAt?: Timestamp;
   totalScore?: number;
   totalClaims?: number;
+  seasonalScore?: number;
 };
 
 export default function StreakWidget() {
@@ -98,6 +99,7 @@ export default function StreakWidget() {
       const longest = Math.max(newStreak, d.longestStreak || 0);
       const reward = 5 + Math.min(newStreak, 10);
       const totalScore = (d.totalScore || 0) + reward;
+      const seasonalScore = (d.seasonalScore || 0) + reward;
       const totalClaims = (d.totalClaims || 0) + 1;
 
       tx.set(
@@ -108,6 +110,7 @@ export default function StreakWidget() {
           lastClaimAt: Timestamp.fromDate(now),
           totalClaims,
           totalScore,
+          seasonalScore,
         },
         { merge: true }
       );

@@ -76,7 +76,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       issuerName: ISSUER_NAME,
       issuerRole: ISSUER_ROLE,
       verificationBaseUrl: VERIFY_BASE_URL,
-      backgroundTagline: "Mentora Course System memberikan apresiasi atas dedikasi dan konsistensi belajar.",
+      backgroundTagline: "MentoraxPesat memberikan apresiasi atas dedikasi dan konsistensi belajar.",
       achievements,
     });
 

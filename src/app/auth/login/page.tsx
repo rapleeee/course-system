@@ -8,6 +8,7 @@ import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth'
 import axios from 'axios'
 import { toast } from 'sonner'
 import { setCookie } from 'cookies-next'
+import { ensureUserProfile } from '@/lib/user-profile'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -36,8 +37,9 @@ const handleEmailLogin = async (e: React.FormEvent<HTMLFormElement>) => {
   setLoading(true)
 
   try {
-    await signInWithEmailAndPassword(auth, email, password)
-    const token = await auth.currentUser?.getIdToken()
+    const credential = await signInWithEmailAndPassword(auth, email, password)
+    await ensureUserProfile(credential.user)
+    const token = await credential.user.getIdToken()
     if (token) {
       setCookie('token', token)
     }
@@ -62,7 +64,8 @@ const handleEmailLogin = async (e: React.FormEvent<HTMLFormElement>) => {
 
   const handleGoogleLogin = async () => {
     try {
-      await signInWithPopup(auth, googleProvider)
+      const result = await signInWithPopup(auth, googleProvider)
+      await ensureUserProfile(result.user)
       toast.success('Login successful!')
       window.location.href = '/pages/dashboard' 
     } catch (err: unknown) {

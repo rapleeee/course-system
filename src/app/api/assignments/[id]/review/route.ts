@@ -16,6 +16,7 @@ type Body = {
 type UserDoc = {
   role?: string;
   totalScore?: number;
+  seasonalScore?: number;
 };
 
 type AssignmentDoc = {
@@ -80,10 +81,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
       const userData = (userSnap.data() as UserDoc | undefined) ?? {};
       let newTotal = userData.totalScore ?? 0;
+      let newSeasonal = userData.seasonalScore ?? 0;
       if (body.decision === "approved" && !alreadyApproved) {
         updates.awardedPoints = awardReq;
         newTotal = newTotal + awardReq;
-        tx.set(userRef, { totalScore: newTotal }, { merge: true });
+        newSeasonal = newSeasonal + awardReq;
+        tx.set(userRef, { totalScore: newTotal, seasonalScore: newSeasonal }, { merge: true });
       }
 
       tx.set(subRef, updates, { merge: true });

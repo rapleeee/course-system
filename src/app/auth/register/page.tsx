@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { sendEmailVerification } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import { ensureUserProfile } from "@/lib/user-profile";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -34,6 +35,8 @@ export default function SignUpPage() {
       // Create user
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+
+      await ensureUserProfile(user, { name: fullName, email });
 
       // Send verification email
       await sendEmailVerification(user);

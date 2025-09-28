@@ -91,7 +91,14 @@ export default function ReviewAssignmentPage({ params }: { params: Promise<{ id:
           );
 
           if (decision === "approved" && !alreadyApproved && pts > 0) {
-            tx.set(userRef, { totalScore: increment(pts) }, { merge: true });
+            tx.set(
+              userRef,
+              {
+                totalScore: increment(pts),
+                seasonalScore: increment(pts),
+              },
+              { merge: true }
+            );
           }
         });
         toast.success("Tersimpan (fallback)");

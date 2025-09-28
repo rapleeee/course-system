@@ -55,33 +55,43 @@ export default function DashboardPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [myCourses, setMyCourses] = useState<Course[]>([]);
+  const [activeCourseCount, setActiveCourseCount] = useState(0);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [busy, setBusy] = useState(false);
   const [certificateCount, setCertificateCount] = useState(0);
 
   const fetchMyCourses = useCallback(async (courseIds: string[]) => {
     try {
-      if (!courseIds.length) {
+      const uniqueIds = Array.from(new Set(courseIds.filter(Boolean)));
+      if (uniqueIds.length === 0) {
         setMyCourses([]);
+        setActiveCourseCount(0);
         return;
       }
-      // Firestore "in" max 10
-      const ids = courseIds.slice(0, 10);
-      const q = fsQuery(collection(db, "courses"), where("__name__", "in", ids));
-      const snap = await getDocs(q);
-      const rows: Course[] = snap.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<Course, "id">),
-      }));
-      // urutkan sesuai urutan ids
-      const ordered = ids
-        .map((id) => rows.find((r) => r.id === id))
-        .filter((x): x is Course => Boolean(x))
-        .slice(0, 6);
-      setMyCourses(ordered);
+      const chunked: string[][] = [];
+      for (let i = 0; i < uniqueIds.length; i += 10) {
+        chunked.push(uniqueIds.slice(i, i + 10));
+      }
+
+      const results: Course[] = [];
+      for (const chunk of chunked) {
+        const chunkQuery = fsQuery(collection(db, "courses"), where("__name__", "in", chunk));
+        const snap = await getDocs(chunkQuery);
+        snap.docs.forEach((docSnap) => {
+          results.push({ id: docSnap.id, ...(docSnap.data() as Omit<Course, "id">) });
+        });
+      }
+
+      const ranked = uniqueIds
+        .map((id) => results.find((course) => course.id === id))
+        .filter((course): course is Course => Boolean(course));
+
+      setActiveCourseCount(ranked.length);
+      setMyCourses(ranked.slice(0, 6));
     } catch (e) {
       console.warn("Gagal ambil courses:", e);
       setMyCourses([]);
+      setActiveCourseCount(0);
     }
   }, []);
 
@@ -135,10 +145,12 @@ export default function DashboardPage() {
         ]);
       } else {
         setProfile(null);
+        setActiveCourseCount(0);
         await Promise.all([fetchMyCourses([]), fetchAnnouncements(), fetchCertificateCount(uid)]);
       }
     } catch (e) {
       console.error("Gagal mengambil data profil:", e);
+      setActiveCourseCount(0);
     } finally {
       setBusy(false);
     }
@@ -167,7 +179,7 @@ export default function DashboardPage() {
     );
   }
 
-  const totalKelas = profile?.claimedCourses?.length ?? 0;
+  const totalKelas = activeCourseCount;
   const legacyCertificateCount = profile?.claimedCertificates?.length ?? 0;
   const totalSertifikat = certificateCount || legacyCertificateCount;
   const ongoingCourses = totalKelas;
