@@ -381,7 +381,14 @@ export default function AssignmentsPage() {
             if (autoApprove && fallbackAwardedPoints > 0) {
               fallbackAutoApproved = true;
               fallbackJustAwarded = true;
-              tx.set(userRef, { totalScore: increment(fallbackAwardedPoints) }, { merge: true });
+              tx.set(
+                userRef,
+                {
+                  totalScore: increment(fallbackAwardedPoints),
+                  seasonalScore: increment(fallbackAwardedPoints),
+                },
+                { merge: true }
+              );
             } else if (autoApprove) {
               fallbackAutoApproved = true;
             }

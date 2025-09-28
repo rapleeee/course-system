@@ -232,7 +232,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       };
 
       if (autoApprove && awardedPoints > 0) {
-        tx.set(userRef, { totalScore: FieldValue.increment(awardedPoints) }, { merge: true });
+        tx.set(
+          userRef,
+          {
+            totalScore: FieldValue.increment(awardedPoints),
+            seasonalScore: FieldValue.increment(awardedPoints),
+          },
+          { merge: true }
+        );
         justAwarded = true;
       }
 

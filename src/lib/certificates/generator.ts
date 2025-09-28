@@ -19,98 +19,138 @@ export async function renderCertificatePdf(payload: CertificatePdfPayload): Prom
   const qrBuffer = await QRCode.toBuffer(verificationUrl, { type: "png", scale: 6, margin: 1 });
 
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ size: "A4", layout: "landscape", margins: { top: 60, bottom: 60, left: 70, right: 70 } });
+    const doc = new PDFDocument({
+      size: "A4",
+      layout: "landscape",
+      margins: { top: 60, bottom: 60, left: 70, right: 70 },
+    });
+
     const buffers: Buffer[] = [];
     doc.on("data", (chunk) => buffers.push(Buffer.from(chunk)));
     doc.on("error", reject);
     doc.on("end", () => resolve(Buffer.concat(buffers)));
 
-    const brandColor = "#0d3b66";
-    const accentColor = "#f4a261";
-    const textColor = "#14213d";
-    const subtleText = "#475569";
+    const primary = "#1B3C53";
+    const accent = "#D49A6A";
+    const text = "#1F2937";
+    const muted = "#6B7280";
 
-    const panelWidth = 190;
-    const panelX = doc.page.margins.left - 50;
-    const panelY = doc.page.margins.top - 30;
-    const panelHeight = doc.page.height - doc.page.margins.top - doc.page.margins.bottom + 60;
+    const pageWidth = doc.page.width;
+    const pageHeight = doc.page.height;
+    const margin = 50;
+    const contentWidth = pageWidth - margin * 2;
 
-    doc.save();
-    doc.rect(panelX, panelY, panelWidth, panelHeight).fill(brandColor);
-    doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(24).text("MENTORAXPESAT", panelX + 24, doc.page.height - doc.page.margins.bottom - 54, {
-      width: panelWidth - 40,
+    doc.rect(0, 0, pageWidth, pageHeight).fill("#F8FAFC");
+    doc.rect(margin, margin, contentWidth, pageHeight - margin * 2).fill("white");
+    doc.strokeColor("#E2E8F0").lineWidth(2).rect(margin, margin, contentWidth, pageHeight - margin * 2).stroke();
+
+    const drawShape = (callback: () => void) => {
+      doc.save();
+      callback();
+      doc.restore();
+    };
+
+    drawShape(() => {
+      doc.fillColor(primary).opacity(0.08);
+      doc.roundedRect(margin + 20, margin + 20, contentWidth - 40, 80, 18).fill();
     });
-    doc.restore();
 
-    const contentX = panelX + panelWidth + 36;
-    const contentWidth = doc.page.width - contentX - doc.page.margins.right;
-    let y = doc.page.height - doc.page.margins.top;
+    drawShape(() => {
+      doc.fillColor(accent).opacity(0.06);
+      doc.circle(pageWidth - margin - 80, margin + 70, 60).fill();
+    });
 
-    doc.fillColor(textColor).font("Helvetica-Bold").fontSize(30).text("SERTIFIKAT PENGHARGAAN", contentX, y, { width: contentWidth });
-    y -= 36;
+    drawShape(() => {
+      doc.fillColor("#0EA5E9").opacity(0.04);
+      doc.polygon(
+        [margin + 10, pageHeight - margin - 120],
+        [margin + 150, pageHeight - margin - 40],
+        [margin + 10, pageHeight - margin - 40]
+      ).fill();
+    });
 
-    const tagline = payload.backgroundTagline || "Mentoraxpesat memberikan apresiasi atas dedikasi dan konsistensi belajar.";
-    doc.font("Helvetica").fontSize(12).fillColor(subtleText).text(tagline, contentX, y, { width: contentWidth });
-    y -= 48;
+    let cursorY = margin + 60;
+    const centerLine = (value: string, font: string, size: number, color: string, gap = 18) => {
+      doc.fillColor(color)
+        .font(font)
+        .fontSize(size)
+        .text(value, margin, cursorY, { width: contentWidth, align: "center" });
+      cursorY = doc.y + gap;
+    };
 
-    doc.fontSize(11).fillColor(subtleText).text("Diberikan kepada", contentX, y);
-    y -= 20;
-    doc.font("Helvetica-Bold").fontSize(32).fillColor(textColor).text(payload.studentName, contentX, y, { width: contentWidth });
-    y -= 40;
+    centerLine("Sertifikat Pencapaian", "Helvetica-Bold", 32, primary, 12);
+    centerLine(
+      payload.backgroundTagline || "belajar.",
+      "Helvetica",
+      12,
+      muted,
+      30
+    );
+    centerLine("Diberikan kepada", "Helvetica", 13, muted, 10);
+    centerLine(payload.studentName, "Helvetica-Bold", 28, text, 12);
+    centerLine("atas keberhasilan menyelesaikan", "Helvetica", 12, muted, 10);
+    centerLine(payload.courseTitle, "Helvetica-Bold", 20, accent, 28);
 
-    doc.font("Helvetica").fontSize(14).fillColor(subtleText).text("atas keberhasilannya menyelesaikan", contentX, y);
-    doc.font("Helvetica-Bold").fontSize(20).fillColor(accentColor).text(payload.courseTitle, contentX + 200, y);
-    y -= 52;
+    const infoY = cursorY + 10;
+    const infoLeft = margin + 50;
+    const infoRight = pageWidth - margin - 50;
 
-    doc.font("Helvetica").fontSize(11).fillColor(subtleText).text("Nomor Sertifikat", contentX, y);
-    doc.font("Helvetica-Bold").fontSize(13).fillColor(textColor).text(payload.certificateNumber, contentX, y - 18);
+    doc.moveTo(infoLeft, infoY).lineTo(infoRight, infoY).strokeColor("#E5E7EB").lineWidth(1).stroke();
 
-    doc.font("Helvetica").fillColor(subtleText).text("Kode Verifikasi", contentX + 220, y);
-    doc.font("Helvetica-Bold").fillColor(textColor).text(payload.verificationCode, contentX + 220, y - 18);
+    const infoText = (label: string, value: string, x: number, y: number, width: number) => {
+      doc.fillColor(muted).font("Helvetica").fontSize(11).text(`${label}: ${value}`, x, y, { width });
+    };
 
-    doc.font("Helvetica").fillColor(subtleText).text(`Diterbitkan: ${payload.issuedDateText}`, contentX + 420, y);
-    y -= 60;
+    infoText("Nomor Sertifikat", payload.certificateNumber, infoLeft, infoY + 16, contentWidth / 2 - 60);
+    infoText("Kode Verifikasi", payload.verificationCode, margin + contentWidth / 2, infoY + 16, contentWidth / 2 - 60);
+    infoText("Diterbitkan", payload.issuedDateText, infoLeft, infoY + 34, contentWidth / 2 - 60);
 
-    const achievements = payload.achievements?.length ? payload.achievements : [];
+    cursorY = infoY + 70;
+    const achievements = (payload.achievements ?? []).filter(Boolean).slice(0, 3);
     if (achievements.length > 0) {
-      doc.font("Helvetica-Bold").fontSize(12).fillColor(textColor).text("Poin Pencapaian", contentX, y);
-      y -= 18;
-      doc.font("Helvetica").fontSize(10).fillColor(subtleText);
-      achievements.slice(0, 4).forEach((achievement) => {
-        doc.text(`• ${achievement}`, contentX, y, { width: contentWidth });
-        y -= 16;
+      doc.fillColor(text).font("Helvetica-Bold").fontSize(12).text("Poin Pencapaian:", infoLeft, cursorY);
+      cursorY = doc.y + 6;
+      doc.fillColor(muted).font("Helvetica").fontSize(11);
+      achievements.forEach((item) => {
+        doc.text(`• ${item}`, infoLeft, cursorY, { width: contentWidth - 100 });
+        cursorY = doc.y + 4;
       });
-      y -= 12;
     }
 
-    const qrSize = 100;
-    const qrX = doc.page.width - doc.page.margins.right - qrSize;
-    const qrY = doc.page.height - doc.page.margins.top - qrSize - 20;
+    const footerBaseline = pageHeight - margin - 36;
+    const qrSize = 110;
+    const qrX = pageWidth - margin - qrSize - 10;
+    const qrY = footerBaseline - qrSize - 16;
     doc.image(qrBuffer, qrX, qrY, { width: qrSize, height: qrSize });
-    doc.font("Helvetica").fontSize(8).fillColor(subtleText).text("Scan untuk verifikasi", qrX, qrY - 12, {
+    doc.fillColor(muted).fontSize(9).text("Scan untuk verifikasi", qrX, qrY - 12, {
       width: qrSize,
       align: "center",
     });
 
-    if (payload.issuerName) {
-      const sigY = doc.page.margins.bottom + 80;
-      const sigWidth = 220;
-      const sigX = contentX;
+    doc.fillColor(muted)
+      .fontSize(9)
+      .text("Validasi sertifikat di:", margin + 30, footerBaseline);
+    doc.fillColor(accent)
+      .font("Helvetica-Bold")
+      .text(verificationUrl, margin + 170, footerBaseline);
 
-      doc
-        .moveTo(sigX, sigY)
-        .lineTo(sigX + sigWidth, sigY)
-        .strokeColor(subtleText)
-        .lineWidth(1)
-        .stroke();
-      doc.font("Helvetica-Bold").fontSize(12).fillColor(textColor).text(payload.issuerName, sigX, sigY - 14);
+    if (payload.issuerName) {
+      const sigWidth = 220;
+      const sigX = pageWidth - margin - sigWidth - 10;
+      const sigY = footerBaseline - 12;
+
+      doc.moveTo(sigX, sigY).lineTo(sigX + sigWidth, sigY).strokeColor("#CBD5F5").lineWidth(1).stroke();
+      doc.fillColor(text).font("Helvetica-Bold").fontSize(12).text(payload.issuerName, sigX, sigY + 6, {
+        width: sigWidth,
+        align: "center",
+      });
       if (payload.issuerRole) {
-        doc.font("Helvetica").fontSize(10).fillColor(subtleText).text(payload.issuerRole, sigX, sigY - 30);
+        doc.fillColor(muted).font("Helvetica").fontSize(10).text(payload.issuerRole, sigX, sigY + 26, {
+          width: sigWidth,
+          align: "center",
+        });
       }
     }
-
-    doc.font("Helvetica").fontSize(9).fillColor(subtleText).text("Validasi sertifikat di:", contentX, doc.page.margins.bottom - 10);
-    doc.font("Helvetica-Bold").fillColor(accentColor).text(verificationUrl, contentX + 120, doc.page.margins.bottom - 10);
 
     doc.end();
   });

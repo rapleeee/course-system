@@ -13,6 +13,7 @@ type UserDoc = {
   longestStreak?: number;
   totalScore?: number;
   totalClaims?: number;
+  seasonalScore?: number;
 };
 
 function startOfUtcDay(d: Date) {
@@ -70,6 +71,7 @@ export async function POST(req: NextRequest) {
       // Reward scheme: base 5 + min(streak, 10)
       const reward = 5 + Math.min(newStreak, 10);
       const totalScore = (data.totalScore ?? 0) + reward;
+      const seasonalScore = (data.seasonalScore ?? 0) + reward;
       const totalClaims = (data.totalClaims ?? 0) + 1;
 
       tx.set(
@@ -80,6 +82,7 @@ export async function POST(req: NextRequest) {
           lastClaimAt: Timestamp.fromDate(now),
           totalClaims,
           totalScore,
+          seasonalScore,
         },
         { merge: true }
       );

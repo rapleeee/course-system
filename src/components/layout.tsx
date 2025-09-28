@@ -18,9 +18,10 @@ import { useAuth } from "@/lib/useAuth";
 import Link from "next/link";
 import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import ChatBox from "./mentorai/ChatBox";
 import { Toaster } from "@/components/ui/sonner";
+import { usePathname, useRouter } from "next/navigation";
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -36,29 +37,38 @@ type ProfileData = {
   roles?: string[];
   subscriptionActive?: boolean;
   subscriberUntil?: unknown;
+  surveyCompleted?: boolean;
 };
 
 export default function Layout({ children, pageTitle = "Dashboard" }: LayoutProps) {
   const { user } = useAuth();
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
   // Chat list no longer used; ChatBox handles its own context
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (user?.uid) {
-        try {
-          const docRef = doc(db, "users", user.uid);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            setProfile(docSnap.data() as ProfileData);
-          }
-        } catch (err) {
-          console.error("Failed to fetch profile:", err);
-        }
-      }
-    };
+    if (!user?.uid) {
+      setProfile(null);
+      setProfileLoaded(false);
+      return;
+    }
 
-    fetchProfile();
+    const ref = doc(db, "users", user.uid);
+    const unsubscribe = onSnapshot(
+      ref,
+      (snap) => {
+        setProfile((snap.data() as ProfileData | undefined) ?? null);
+        setProfileLoaded(true);
+      },
+      (error) => {
+        console.error("Failed to fetch profile:", error);
+        setProfileLoaded(true);
+      }
+    );
+
+    return () => unsubscribe();
   }, [user]);
 
   const handleLogout = async () => {
@@ -69,6 +79,22 @@ export default function Layout({ children, pageTitle = "Dashboard" }: LayoutProp
   const isSubscriber = Boolean(
     profile?.subscriptionActive || (profile?.roles || []).includes("subscriber")
   );
+
+  useEffect(() => {
+    if (!user || !profileLoaded) return;
+
+    const isSurveyPage = pathname?.startsWith("/pages/survey");
+    const surveyDone = Boolean(profile?.surveyCompleted);
+
+    if (!surveyDone && !isSurveyPage) {
+      router.replace("/pages/survey");
+      return;
+    }
+
+    if (surveyDone && isSurveyPage) {
+      router.replace("/pages/dashboard");
+    }
+  }, [user, profile, profileLoaded, pathname, router]);
 
   return (
     <SidebarProvider>
