@@ -682,9 +682,12 @@ export default function AdminAssignmentsPage() {
       </div>
       {editing && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setEditing(null)}>
-          <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-xl w-full max-w-lg p-4" onClick={(e) => e.stopPropagation()}>
-            <div className="text-lg font-semibold mb-2">Edit Tugas/Kuis</div>
-            <div className="space-y-4">
+          <div
+            className="bg-white dark:bg-neutral-900 rounded-xl shadow-xl w-full max-w-lg p-4 max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-lg font-semibold mb-3">Edit Tugas/Kuis</div>
+            <div className="space-y-4 overflow-y-auto pr-1 flex-1">
               <Input placeholder="Judul" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
               <Textarea placeholder="Deskripsi" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
               <div className="flex flex-wrap gap-3 items-start md:items-center">
@@ -747,10 +750,10 @@ export default function AdminAssignmentsPage() {
                   <DocxImportHelp context="edit" />
                 </div>
               ) : null}
-              <div className="flex items-center justify-end gap-2">
-                <Button variant="outline" onClick={() => setEditing(null)} disabled={busy}>Batal</Button>
-                <Button onClick={submitEdit} disabled={!canSubmitEdit}>Simpan</Button>
-              </div>
+            </div>
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <Button variant="outline" onClick={() => setEditing(null)} disabled={busy}>Batal</Button>
+              <Button onClick={submitEdit} disabled={!canSubmitEdit}>Simpan</Button>
             </div>
           </div>
         </div>
