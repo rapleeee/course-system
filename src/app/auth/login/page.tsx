@@ -109,6 +109,11 @@ const handleEmailLogin = async (e: React.FormEvent<HTMLFormElement>) => {
               {showPassword ? <EyeOff /> : <Eye />}
             </button>
           </div>
+          <div className="flex justify-end text-sm">
+            <Link href="/auth/forgot-password" className="text-[#1B3C53] hover:underline">
+              Lupa password?
+            </Link>
+          </div>
           <Button
             type="submit"
             size="lg"

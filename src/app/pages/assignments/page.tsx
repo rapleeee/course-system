@@ -27,10 +27,13 @@ type QuizQuestion = {
 };
 
 type SubmissionStatus = "submitted" | "approved" | "rejected" | "needs_correction";
+type TaskSubmission = { text: string };
+
 type SubmissionSummary = {
   status?: SubmissionStatus;
   awardedPoints?: number;
   autoScore?: number | null;
+  answers?: QuizSubmission | TaskSubmission;
 };
 
 type Assignment = {
@@ -54,7 +57,6 @@ type McqAnswer = { type: "mcq"; choices: number[] };
 type TextAnswer = { type: "text"; value: string };
 type QuizAnswerEntry = McqAnswer | TextAnswer;
 type QuizSubmission = QuizAnswerEntry[];
-type TaskSubmission = { text: string };
 type AnswerStateValue = string | QuizSubmission;
 type AnswerState = Record<string, AnswerStateValue>;
 
@@ -65,6 +67,20 @@ const STATUS_LABELS: Record<SubmissionStatus, string> = {
   approved: "Sudah disetujui",
   rejected: "Ditolak",
   needs_correction: "Perlu koreksi",
+};
+
+const normalizeNumberArray = (values: unknown): number[] => {
+  if (!Array.isArray(values)) return [];
+  return Array.from(
+    new Set(values.map((n) => (typeof n === "number" ? n : parseInt(String(n), 10))))
+  )
+    .filter((n) => Number.isInteger(n) && n >= 0)
+    .sort((a, b) => a - b);
+};
+
+const extractChoices = (entry: QuizAnswerEntry | undefined): number[] => {
+  if (!entry || entry.type !== "mcq") return [];
+  return normalizeNumberArray(entry.choices);
 };
 
 function computeAutoGrading(assignment: Assignment, answers: QuizSubmission): AutoGradeResult {
@@ -156,12 +172,32 @@ export default function AssignmentsPage() {
       return filtered;
     });
 
+    const parseSubmission = (raw: unknown): SubmissionSummary => {
+      if (!raw || typeof raw !== "object") return {};
+      const data = raw as Record<string, unknown>;
+      const submissionAnswers = data.answers;
+      const validAnswers = Array.isArray(submissionAnswers)
+        ? (submissionAnswers as QuizSubmission)
+        : submissionAnswers &&
+            typeof submissionAnswers === "object" &&
+            "text" in submissionAnswers &&
+            typeof (submissionAnswers as Record<string, unknown>).text === "string"
+        ? (submissionAnswers as TaskSubmission)
+        : undefined;
+      return {
+        status: data.status as SubmissionStatus | undefined,
+        awardedPoints: typeof data.awardedPoints === "number" ? data.awardedPoints : undefined,
+        autoScore: typeof data.autoScore === "number" ? data.autoScore : null,
+        answers: validAnswers,
+      };
+    };
+
     const unsubscribers = assignmentIds.map((assignmentId) => {
       const subRef = doc(db, `assignments/${assignmentId}/submissions/${user.uid}`);
       return onSnapshot(subRef, (snap) => {
         setSubmissionMap((prev) => ({
           ...prev,
-          [assignmentId]: snap.exists() ? (snap.data() as SubmissionSummary) : null,
+          [assignmentId]: snap.exists() ? parseSubmission(snap.data()) : null,
         }));
       });
     });
@@ -308,6 +344,7 @@ export default function AssignmentsPage() {
           status: json.autoApproved ? "approved" : "submitted",
           awardedPoints: json.autoApproved && typeof json.awardedPoints === "number" ? json.awardedPoints : undefined,
           autoScore: typeof json.autoScore === "number" ? json.autoScore : null,
+          answers: normalizedAnswers,
         },
       }));
 
@@ -342,7 +379,12 @@ export default function AssignmentsPage() {
           toast.success("Jawaban terkirim (fallback). Menunggu review admin.");
           setSubmissionMap((prev) => ({
             ...prev,
-            [assignment.id]: { status: "submitted", awardedPoints: undefined, autoScore: null },
+            [assignment.id]: {
+              status: "submitted",
+              awardedPoints: undefined,
+              autoScore: null,
+              answers: taskAnswers,
+            },
           }));
           setAnswers((prev) => ({ ...prev, [assignment.id]: "" }));
         } else {
@@ -416,6 +458,7 @@ export default function AssignmentsPage() {
               status: fallbackAutoApproved ? "approved" : "submitted",
               awardedPoints: fallbackAutoApproved ? fallbackAwardedPoints : undefined,
               autoScore: fallbackAutoScore,
+              answers: quizAnswers,
             },
           }));
           setAnswers((prev) => ({ ...prev, [assignment.id]: [] }));
@@ -443,9 +486,39 @@ export default function AssignmentsPage() {
           list.map((a) => {
             const isQuiz = a.type === "quiz";
             const questionList = Array.isArray(a.questions) ? a.questions : [];
-            const stored = answers[a.id];
             const submissionInfo = submissionMap[a.id];
             const alreadySubmitted = Boolean(submissionInfo);
+            const storedSubmissionAnswers = submissionInfo?.answers;
+            const stored = alreadySubmitted ? storedSubmissionAnswers ?? answers[a.id] : answers[a.id];
+            const submittedQuizAnswers = alreadySubmitted && Array.isArray(storedSubmissionAnswers)
+              ? (storedSubmissionAnswers as QuizSubmission)
+              : [];
+            const quizReview = alreadySubmitted && isQuiz
+              ? questionList.reduce(
+                  (
+                    acc,
+                    question,
+                    index
+                  ) => {
+                    if (question.type !== "mcq") return acc;
+                    const correct = normalizeNumberArray(question.correctIndices ?? []);
+                    if (correct.length === 0) return acc;
+                    acc.gradable += 1;
+                    const entry = submittedQuizAnswers[index] as QuizAnswerEntry | undefined;
+                    const selected = extractChoices(entry);
+                    const isCorrect =
+                      selected.length === correct.length &&
+                      selected.every((value, i) => value === correct[i]);
+                    if (isCorrect) {
+                      acc.correct += 1;
+                    } else {
+                      acc.incorrect.push(index + 1);
+                    }
+                    return acc;
+                  },
+                  { gradable: 0, correct: 0, incorrect: [] as number[] }
+                )
+              : null;
             const statusLabel = submissionInfo?.status ? STATUS_LABELS[submissionInfo.status] : STATUS_LABELS.submitted;
             const isOpen = openId === a.id;
 
@@ -492,7 +565,13 @@ export default function AssignmentsPage() {
                     className="border-t p-4 space-y-4 bg-neutral-50 dark:bg-neutral-900/40"
                   >
                     {alreadySubmitted ? (
-                      <div className="text-xs text-emerald-600">
+                      <div
+                        className={
+                          isQuiz && quizReview && quizReview.gradable > 0 && quizReview.incorrect.length > 0
+                            ? "text-xs text-red-600"
+                            : "text-xs text-emerald-600"
+                        }
+                      >
                         Kamu sudah mengirim jawaban ({statusLabel}).
                     {typeof submissionInfo?.awardedPoints === "number"
                       ? ` Nilai: ${submissionInfo.awardedPoints} poin.`
@@ -500,6 +579,15 @@ export default function AssignmentsPage() {
                         {typeof submissionInfo?.autoScore === "number"
                           ? ` Skor otomatis ${(submissionInfo.autoScore * 100).toFixed(0)}%.`
                           : ""}
+                        {isQuiz && quizReview && quizReview.gradable > 0 ? (
+                          <span>
+                            {" "}
+                            {quizReview.correct} dari {quizReview.gradable} soal pilihan ganda kamu benar.
+                            {quizReview.incorrect.length > 0
+                              ? ` Cek soal ${quizReview.incorrect.join(", ")} untuk melihat detail kesalahannya.`
+                              : " Semua benar, mantap!"}
+                          </span>
+                        ) : null}
                       </div>
                     ) : null}
 
@@ -514,8 +602,22 @@ export default function AssignmentsPage() {
                             </div>
                           ) : null}
                           {questionList.map((q, idx) => {
-                            const entry = Array.isArray(stored) ? (stored[idx] as QuizAnswerEntry | undefined) : undefined;
+                            const quizAnswers = Array.isArray(stored)
+                              ? (stored as QuizSubmission)
+                              : [];
+                            const entry = Array.isArray(quizAnswers)
+                              ? (quizAnswers[idx] as QuizAnswerEntry | undefined)
+                              : undefined;
                             const options = Array.isArray(q.options) ? q.options : [];
+                            const correctIndices = normalizeNumberArray(q.correctIndices ?? []);
+                            const normalizedSelected = extractChoices(entry);
+                            const isGraded = alreadySubmitted && q.type === "mcq" && correctIndices.length > 0;
+                            const isCorrect = isGraded
+                              ? normalizedSelected.length === correctIndices.length &&
+                                normalizedSelected.every((value, i) => value === correctIndices[i])
+                              : null;
+                            const selectedSet = new Set(normalizedSelected);
+                            const correctSet = new Set(correctIndices);
                             return (
                               <div
                                 key={`${a.id}-${idx}`}
@@ -530,11 +632,32 @@ export default function AssignmentsPage() {
                                   ) : (
                                     <div className="space-y-2">
                                       {options.map((opt, optIdx) => {
-                                        const selected = Boolean(entry && entry.type === "mcq" && entry.choices.includes(optIdx));
+                                        const selected = selectedSet.has(optIdx);
+                                        const highlightState = (() => {
+                                          if (!isGraded) return "neutral" as const;
+                                          if (selected && correctSet.has(optIdx)) return "correct" as const;
+                                          if (selected && !correctSet.has(optIdx)) return "incorrect" as const;
+                                          if (!selected && correctSet.has(optIdx)) return "missed" as const;
+                                          return "neutral" as const;
+                                        })();
+                                        const baseClasses =
+                                          "flex items-center gap-2 text-sm rounded-md border px-3 py-2 transition";
+                                        const stateClasses = (() => {
+                                          switch (highlightState) {
+                                            case "correct":
+                                              return "border-emerald-500 bg-emerald-50 text-emerald-700";
+                                            case "incorrect":
+                                              return "border-red-500 bg-red-50 text-red-700";
+                                            case "missed":
+                                              return "border-emerald-400 bg-emerald-50/60 text-emerald-700";
+                                            default:
+                                              return "border-gray-200 dark:border-neutral-800";
+                                          }
+                                        })();
                                         return (
                                           <label
                                             key={`${a.id}-${idx}-${optIdx}`}
-                                            className="flex items-center gap-2 text-sm"
+                                            className={`${baseClasses} ${stateClasses}`}
                                           >
                                             <input
                                               type="checkbox"
@@ -547,7 +670,14 @@ export default function AssignmentsPage() {
                                           </label>
                                         );
                                       })}
-                                      <p className="text-[11px] text-gray-500">Bisa memilih lebih dari satu jawaban.</p>
+                                      <p className="text-[11px] text-gray-500">
+                                        Bisa memilih lebih dari satu jawaban.
+                                        {isGraded
+                                          ? correctIndices.length === 0
+                                            ? ""
+                                            : " Pilihan hijau adalah jawaban benar."
+                                          : ""}
+                                      </p>
                                     </div>
                                   )
                                 ) : (
@@ -559,6 +689,17 @@ export default function AssignmentsPage() {
                                     disabled={alreadySubmitted}
                                   />
                                 )}
+                                {isGraded ? (
+                                  <p
+                                    className={`text-xs ${
+                                      isCorrect ? "text-emerald-600" : "text-red-600"
+                                    }`}
+                                  >
+                                    {isCorrect
+                                      ? "Mantap! Jawaban kamu tepat."
+                                      : "Ada jawaban yang belum tepat. Lihat opsi berwarna merah untuk dikoreksi."}
+                                  </p>
+                                ) : null}
                               </div>
                             );
                           })}
@@ -567,7 +708,13 @@ export default function AssignmentsPage() {
                     ) : (
                       <Textarea
                         placeholder="Jawaban kamu (tuliskan ringkas & jelas)…"
-                        value={typeof stored === "string" ? stored : ""}
+                        value={
+                          typeof stored === "string"
+                            ? stored
+                            : stored && typeof stored === "object" && "text" in stored
+                            ? (stored as TaskSubmission).text
+                            : ""
+                        }
                         onChange={(e) => handleTaskAnswerChange(a.id, e.target.value)}
                         disabled={alreadySubmitted}
                       />
