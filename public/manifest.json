@@ -1,0 +1,63 @@
+{
+  "name": "Mentora SMK Pesat",
+  "short_name": "Mentora",
+  "description": "Platform pembelajaran coding online SMK Pesat dengan modul interaktif dan gamifikasi.",
+  "id": "/",
+  "lang": "id",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "categories": [
+    "education",
+    "productivity"
+  ],
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/photos/progammer.webp",
+      "type": "image/webp",
+      "sizes": "1024x683",
+      "label": "Dashboard kursus Mentora"
+    },
+    {
+      "src": "/photos/working.jpg",
+      "type": "image/jpeg",
+      "sizes": "1920x1080",
+      "label": "Belajar interaktif di Mentora"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Lanjutkan Belajar",
+      "short_name": "Belajar",
+      "description": "Buka halaman utama dashboard kursus.",
+      "url": "/"
+    },
+    {
+      "name": "Lihat Sertifikat",
+      "short_name": "Sertifikat",
+      "description": "Masuk ke halaman sertifikat kelulusan.",
+      "url": "/certificates"
+    }
+  ]
+}
