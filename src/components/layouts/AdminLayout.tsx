@@ -70,6 +70,7 @@ const sidebarMenu = [
     items: [
       { name: "Manajemen User", icon: <Users size={18} />, href: "/admin/users" },
       { name: "Permintaan Langganan", icon: <UserCheck size={18} />, href: "/admin/subscriptions/requests" },
+      { name: "Permintaan Kelas Berbayar", icon: <BookOpen size={18} />, href: "/admin/course-requests" },
       { name: "Pengaturan", icon: <Settings size={18} />, href: "/admin/adminSettings" },
     ],
   },

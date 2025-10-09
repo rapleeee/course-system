@@ -6,19 +6,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { db, storage } from "@/lib/firebase";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import Link from "next/link";
 import Swal from "sweetalert2"; // ✅ Import SweetAlert2
 
+type CourseAccessType = "free" | "subscription" | "paid";
+
 export default function AddCoursesPage() {
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [mentor, setMentor] = useState("");
   const [image, setImage] = useState<File | null>(null);
-  const [isFree, setIsFree] = useState(true);
+  const [accessType, setAccessType] = useState<CourseAccessType>("free");
+  const [price, setPrice] = useState<string>("0");
   const [materialType, setMaterialType] = useState("video");
   const [loading, setLoading] = useState(false);
 
@@ -39,7 +41,9 @@ export default function AddCoursesPage() {
         description: desc,
         mentor,
         imageUrl,
-        isFree,
+        accessType,
+        price: accessType === "paid" ? Number(price) || 0 : 0,
+        isFree: accessType === "free",
         materialType,
         createdAt: serverTimestamp(),
       });
@@ -49,7 +53,8 @@ export default function AddCoursesPage() {
       setDesc("");
       setMentor("");
       setImage(null);
-      setIsFree(true);
+      setAccessType("free");
+      setPrice("0");
       setMaterialType("video");
 
       // ✅ SweetAlert sukses
@@ -128,11 +133,37 @@ export default function AddCoursesPage() {
           />
         </div>
 
-        <div className="flex items-center gap-4">
-          <Label htmlFor="isFree" className="block">Gratis?</Label>
-          <Switch id="isFree" checked={isFree} onCheckedChange={setIsFree} />
-          <span className="text-sm text-muted-foreground">{isFree ? "Gratis" : "Hanya Subscriber"}</span>
+        <div>
+          <Label htmlFor="accessType" className="block mb-1">Tipe Akses</Label>
+          <select
+            id="accessType"
+            className="border rounded-md px-3 py-2 w-full"
+            value={accessType}
+            onChange={(e) => setAccessType(e.target.value as CourseAccessType)}
+          >
+            <option value="free">Gratis</option>
+            <option value="subscription">Hanya Subscriber</option>
+            <option value="paid">Berbayar (Manual)</option>
+          </select>
         </div>
+
+        {accessType === "paid" && (
+          <div>
+            <Label htmlFor="price" className="block mb-1">Harga Course (Rp)</Label>
+            <Input
+              id="price"
+              type="number"
+              min={0}
+              className="border rounded-md px-3 py-2 w-full"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              required={accessType === "paid"}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Pengguna dengan langganan aktif akan mendapatkan diskon Rp5.000 secara otomatis.
+            </p>
+          </div>
+        )}
 
         <div>
           <Label htmlFor="materialType" className="block mb-1">Tipe Pembelajaran</Label>

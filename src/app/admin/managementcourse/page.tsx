@@ -10,8 +10,10 @@ type Course = {
   id: string;
   title: string;
   mentor: string;
-  imageUrl: string;
-  isFree: boolean;
+  imageUrl?: string;
+  accessType?: "free" | "subscription" | "paid";
+  isFree?: boolean;
+  price?: number;
   materialType: string;
 };
 
