@@ -21,7 +21,9 @@ type Course = {
   description: string;
   mentor: string;
   imageUrl: string;
-  isFree: boolean;
+  accessType?: "free" | "subscription" | "paid";
+  isFree?: boolean;
+  price?: number;
   materialType: string;
 };
 

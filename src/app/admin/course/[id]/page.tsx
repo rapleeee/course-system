@@ -13,7 +13,9 @@ type Course = {
   title: string;
   description: string;
   mentor: string;
-  isFree: boolean;
+  accessType?: "free" | "subscription" | "paid";
+  isFree?: boolean;
+  price?: number;
   materialType: string;
 };
 
@@ -71,7 +73,14 @@ export default function CourseDetailPage() {
           <h2 className="text-xl font-bold">{course.title}</h2>
           <p className="text-sm text-gray-600">Mentor: {course.mentor}</p>
           <p className="text-sm text-gray-600">
-            Tipe: {course.materialType} | {course.isFree ? "Gratis" : "Berbayar"}
+            Tipe: {course.materialType} |{" "}
+            {(() => {
+              const access = course.accessType ?? (course.isFree ? "free" : "subscription");
+              if (access === "free") return "Gratis";
+              if (access === "subscription") return "Hanya Subscriber";
+              const priceLabel = (course.price ?? 0).toLocaleString("id-ID");
+              return `Berbayar • Rp ${priceLabel}`;
+            })()}
           </p>
         </Card>
 

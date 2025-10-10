@@ -20,14 +20,16 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { updateDoc } from "firebase/firestore";
 import { toast } from "sonner"; // pastikan kamu sudah install `sonner`
-import { Switch } from "@/components/ui/switch";
+type CourseAccessType = "free" | "subscription" | "paid";
 
 type CourseCardProps = {
   id: string;
   title: string;
   mentor: string;
   imageUrl?: string;
-  isFree: boolean;
+  accessType?: CourseAccessType;
+  isFree?: boolean;
+  price?: number;
   materialType: string;
   onDeleted?: () => void;
 };
@@ -37,17 +39,24 @@ export default function CourseCard({
   title,
   mentor,
   imageUrl,
+  accessType,
   isFree,
+  price,
   materialType,
   onDeleted,
 }: CourseCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
 
+  const normalizedAccess: CourseAccessType =
+    accessType ?? (typeof isFree === "boolean" ? (isFree ? "free" : "subscription") : "subscription");
+  const displayedPrice = normalizedAccess === "paid" ? price ?? 0 : 0;
+
   // State lokal untuk edit form
   const [editTitle, setEditTitle] = useState(title);
   const [editMentor, setEditMentor] = useState(mentor);
-  const [editIsFree, setEditIsFree] = useState(isFree);
+  const [editAccessType, setEditAccessType] = useState<CourseAccessType>(normalizedAccess);
+  const [editPrice, setEditPrice] = useState<string>(displayedPrice ? String(displayedPrice) : "0");
 
   const handleDelete = async () => {
     await deleteDoc(doc(db, "courses", id));
@@ -69,7 +78,9 @@ export default function CourseCard({
     await updateDoc(ref, {
       title: editTitle,
       mentor: editMentor,
-      isFree: editIsFree,
+      accessType: editAccessType,
+      price: editAccessType === "paid" ? Number(editPrice) || 0 : 0,
+      isFree: editAccessType === "free",
     });
 
     toast.success("Course berhasil diperbarui.");
@@ -102,7 +113,12 @@ export default function CourseCard({
           <h3 className="text-lg font-semibold">{title}</h3>
           <p className="text-sm text-gray-500">Mentor: {mentor}</p>
           <p className="text-sm text-gray-500">
-            Tipe: {materialType} | {isFree ? "Gratis" : "Premium"}
+            Tipe: {materialType} |{" "}
+            {normalizedAccess === "free"
+              ? "Gratis"
+              : normalizedAccess === "subscription"
+              ? "Hanya Subscriber"
+              : `Berbayar • Rp ${displayedPrice.toLocaleString("id-ID")}`}
           </p>
         </div>
       </Link>
@@ -134,11 +150,32 @@ export default function CourseCard({
                 value={editMentor}
                 onChange={(e) => setEditMentor(e.target.value)}
               />
-              <div className="flex items-center gap-3">
-                <span className="text-sm">Gratis?</span>
-                <Switch checked={editIsFree} onCheckedChange={setEditIsFree} />
-                <span className="text-xs text-muted-foreground">{editIsFree ? "Gratis" : "Hanya Subscriber"}</span>
+              <div>
+                <label className="block text-sm mb-1">Tipe Akses</label>
+                <select
+                  className="w-full border rounded px-3 py-2 text-sm"
+                  value={editAccessType}
+                  onChange={(e) => setEditAccessType(e.target.value as CourseAccessType)}
+                >
+                  <option value="free">Gratis</option>
+                  <option value="subscription">Hanya Subscriber</option>
+                  <option value="paid">Berbayar (Manual)</option>
+                </select>
               </div>
+              {editAccessType === "paid" && (
+                <div>
+                  <label className="block text-sm mb-1">Harga Course (Rp)</label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={editPrice}
+                    onChange={(e) => setEditPrice(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Pengguna dengan langganan aktif mendapatkan diskon Rp5.000.
+                  </p>
+                </div>
+              )}
             </div>
             <DialogFooter className="mt-4">
               <DialogClose asChild>
