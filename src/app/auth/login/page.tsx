@@ -3,11 +3,12 @@ import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { ArrowRight, Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { auth, googleProvider } from '@/lib/firebase'
-import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth'
+import { onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth'
 import axios from 'axios'
 import { toast } from 'sonner'
-import { setCookie } from 'cookies-next'
+import { deleteCookie, setCookie } from 'cookies-next'
 import { ensureUserProfile } from '@/lib/user-profile'
 
 export default function LoginPage() {
@@ -18,6 +19,7 @@ export default function LoginPage() {
   const [author, setAuthor] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
     const fetchQuote = async () => {
@@ -32,42 +34,66 @@ export default function LoginPage() {
     fetchQuote()
   }, [])
 
-const handleEmailLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault()
-  setLoading(true)
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (!currentUser) {
+        deleteCookie('token')
+        return
+      }
 
-  try {
-    const credential = await signInWithEmailAndPassword(auth, email, password)
-    await ensureUserProfile(credential.user)
-    const token = await credential.user.getIdToken()
-    if (token) {
-      setCookie('token', token)
-    }
+      const token = await currentUser.getIdToken()
+      if (token) {
+        setCookie('token', token, { maxAge: 60 * 60 * 24 * 7, path: '/' })
+      }
 
-    toast.success('Login successful!')
-    setTimeout(() => {
-      const isAdmin = auth.currentUser?.email === 'admin@gmail.com'
-      window.location.href = isAdmin ? '/admin/dashboard' : '/pages/dashboard'
-    }, 1500)
-  } catch (err: unknown) {
-    if (err instanceof Error) {
-      toast.error('Login failed: ' + err.message)
-      setError(err.message)
-    } else {
-      toast.error('Unknown error occurred.')
-      setError('Unknown error')
+      if (typeof window !== 'undefined' && window.location.pathname === '/auth/login') {
+        const isAdmin = currentUser.email === 'admin@gmail.com'
+        router.replace(isAdmin ? '/admin/dashboard' : '/pages/dashboard')
+      }
+    })
+
+    return () => unsubscribe()
+  }, [router])
+
+  const handleEmailLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      const credential = await signInWithEmailAndPassword(auth, email, password)
+      await ensureUserProfile(credential.user)
+      const token = await credential.user.getIdToken()
+      if (token) {
+        setCookie('token', token, { maxAge: 60 * 60 * 24 * 7, path: '/' })
+      }
+
+      toast.success('Login successful!')
+      const isAdmin = credential.user.email === 'admin@gmail.com'
+      router.replace(isAdmin ? '/admin/dashboard' : '/pages/dashboard')
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error('Login failed: ' + err.message)
+        setError(err.message)
+      } else {
+        toast.error('Unknown error occurred.')
+        setError('Unknown error')
+      }
+    } finally {
+      setLoading(false)
     }
-  } finally {
-    setLoading(false)
   }
-}
 
   const handleGoogleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider)
       await ensureUserProfile(result.user)
+      const token = await result.user.getIdToken()
+      if (token) {
+        setCookie('token', token, { maxAge: 60 * 60 * 24 * 7, path: '/' })
+      }
       toast.success('Login successful!')
-      window.location.href = '/pages/dashboard' 
+      const isAdmin = result.user.email === 'admin@gmail.com'
+      router.replace(isAdmin ? '/admin/dashboard' : '/pages/dashboard')
     } catch (err: unknown) {
       if (err instanceof Error) {
         toast.error('Google login failed: ' + err.message)

@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/useAuth";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, collection, getDocs, query, orderBy, setDoc, serverTimestamp, arrayUnion, arrayRemove, type FieldValue } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode, type SyntheticEvent } from "react";
 import Layout from "@/components/layout";
 import Link from "next/link";
 import Image from "next/image";
@@ -39,6 +39,41 @@ type Chapter = {
   createdAt: Date | number;
 };
 
+const buildProtectedPdfSrc = (pdfUrl: string) => {
+  if (!pdfUrl) return "";
+  return pdfUrl.includes("#")
+    ? `${pdfUrl}&toolbar=0&navpanes=0&scrollbar=0`
+    : `${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0`;
+};
+
+const SecureContentWrapper = ({ children, watermark }: { children: ReactNode; watermark: string }) => {
+  const handlePrevent = (event: SyntheticEvent) => {
+    event.preventDefault();
+  };
+
+  return (
+    <div
+      data-secure-content="true"
+      className="relative select-none"
+      onContextMenu={handlePrevent}
+      onCopy={handlePrevent}
+      onCut={handlePrevent}
+      onDragStart={handlePrevent}
+      draggable={false}
+    >
+      {children}
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        <div
+          aria-hidden="true"
+          className="px-6 py-2 rounded-full border border-foreground/20 bg-background/60 text-[10px] md:text-xs font-semibold uppercase tracking-[0.35em] text-foreground/20 rotate-[-22deg] shadow-sm"
+        >
+          {watermark}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const renderChapterContent = (chapter: Chapter) => {
   switch (chapter.type) {
     case "video":
@@ -53,6 +88,7 @@ const renderChapterContent = (chapter: Chapter) => {
                 autoplay: 0,
                 modestbranding: 1,
                 rel: 0,
+                disablekb: 1,
               },
             }}
             className="w-full h-full"
@@ -64,9 +100,11 @@ const renderChapterContent = (chapter: Chapter) => {
       return chapter.pdfUrl ? (
         <div className="w-full h-[600px] rounded-lg overflow-hidden border border-border bg-card">
           <iframe
-            src={`${chapter.pdfUrl}#toolbar=0`}
+            src={buildProtectedPdfSrc(chapter.pdfUrl)}
             className="w-full h-full"
             title={`PDF: ${chapter.title}`}
+            loading="lazy"
+            referrerPolicy="no-referrer"
           />
         </div>
       ) : null;
@@ -79,6 +117,7 @@ const renderChapterContent = (chapter: Chapter) => {
             alt={chapter.title}
             fill
             className="rounded-lg object-contain"
+            draggable={false}
             loading="lazy"
           />
         </div>
@@ -87,6 +126,12 @@ const renderChapterContent = (chapter: Chapter) => {
     default:
       return null;
   }
+};
+
+const renderSecureChapterContent = (chapter: Chapter, watermark: string) => {
+  const content = renderChapterContent(chapter);
+  if (!content) return null;
+  return <SecureContentWrapper watermark={watermark}>{content}</SecureContentWrapper>;
 };
 
 export default function CourseDetailPage() {
@@ -98,6 +143,54 @@ export default function CourseDetailPage() {
   const [hasAccess, setHasAccess] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const secureSelector = "[data-secure-content='true']";
+    const preventIfSecure = (event: Event) => {
+      const target = event.target as HTMLElement | null;
+      if (target && target.closest(secureSelector)) {
+        event.preventDefault();
+      }
+    };
+
+    const preventClipboard = (event: ClipboardEvent) => {
+      const selection = window.getSelection();
+      const anchorNode = selection?.anchorNode;
+      const element =
+        anchorNode instanceof Element
+          ? anchorNode
+          : anchorNode instanceof Text
+            ? anchorNode.parentElement
+            : null;
+
+      if (element && element.closest(secureSelector)) {
+        event.preventDefault();
+      }
+    };
+
+    const blockedCodes = new Set(["KeyS", "KeyP", "KeyC", "KeyX", "KeyD"]);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey)) return;
+      const target = event.target as HTMLElement | null;
+      if (target && target.closest(secureSelector) && blockedCodes.has(event.code)) {
+        event.preventDefault();
+      }
+    };
+
+    document.addEventListener("contextmenu", preventIfSecure);
+    document.addEventListener("dragstart", preventIfSecure);
+    document.addEventListener("copy", preventClipboard);
+    document.addEventListener("cut", preventClipboard);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("contextmenu", preventIfSecure);
+      document.removeEventListener("dragstart", preventIfSecure);
+      document.removeEventListener("copy", preventClipboard);
+      document.removeEventListener("cut", preventClipboard);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   const handleToggleChapterCompleted = async (chapterId: string) => {
     if (!user || !id) return;
@@ -234,6 +327,7 @@ export default function CourseDetailPage() {
               alt={course.title}
               fill
               className="object-cover"
+              draggable={false}
             />
           </div>
           <div className="p-6">
@@ -267,7 +361,7 @@ export default function CourseDetailPage() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-4">
-                    {renderChapterContent(chapter)}
+                    {renderSecureChapterContent(chapter, user?.email ?? user?.displayName ?? "Pengguna terdaftar")}
 
                     {chapter.description && (
                       <p className="text-sm text-muted-foreground">
