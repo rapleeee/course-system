@@ -26,7 +26,15 @@ export type EventDoc = {
   startAt: Timestamp | null
   endAt: Timestamp | null
   createdAt: Timestamp | null
+  createdBy?: string
+  createdByName?: string
+  createdByEmail?: string | null
 }
 
 export type Event = EventDoc & { id: string }
-export type EventDocWrite = Omit<EventDoc, "createdAt"> & { createdAt: FieldValue }
+export type EventDocWrite = Omit<EventDoc, "createdAt"> & {
+  createdAt: FieldValue
+  createdBy: string
+  createdByName: string
+  createdByEmail?: string | null
+}

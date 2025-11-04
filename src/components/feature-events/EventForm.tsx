@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -23,6 +23,7 @@ import {
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage"
 import Image from "next/image"
 import { CATEGORIES, STATUSES, MODES, type Category, type Status, type Mode, type EventDoc } from "@/lib/events-schema"
+import { useAdminProfile } from "@/hooks/useAdminProfile"
 
 const containerCls = "grid grid-cols-1 lg:grid-cols-2 gap-6"
 
@@ -49,6 +50,19 @@ function fromLocalInputValue(v: string): Timestamp | null {
 export function EventForm({ mode, id }: { mode: "create" | "edit"; id?: string }) {
   const router = useRouter()
   const [saving, setSaving] = useState<boolean>(false)
+  const { user, profile } = useAdminProfile()
+
+  const profileName = useMemo(() => {
+    const fallback = user?.email ? user.email.split("@")[0] ?? "" : ""
+    if (!profile) return fallback
+    return (
+      (typeof profile.name === "string" && profile.name) ||
+      (typeof profile.nama === "string" && profile.nama) ||
+      (typeof profile.username === "string" && profile.username) ||
+      (typeof profile.email === "string" && profile.email.split("@")[0]) ||
+      fallback
+    )
+  }, [profile, user?.email])
 
   const [form, setForm] = useState({
     title: "",
@@ -164,6 +178,9 @@ export function EventForm({ mode, id }: { mode: "create" | "edit"; id?: string }
         toast.success("Event diperbarui.")
         router.push("/admin/events")
       } else {
+        if (!user?.uid) {
+          throw new Error("Pengguna tidak terautentikasi.")
+        }
         const tempSlug = slugify(form.title)
         const payload: EventDocWrite = {
           title: form.title,
@@ -182,6 +199,9 @@ export function EventForm({ mode, id }: { mode: "create" | "edit"; id?: string }
           startAt,
           endAt,
           createdAt: serverTimestamp(),
+          createdBy: user.uid,
+          createdByName: profileName || form.title,
+          createdByEmail: user.email ?? null,
         }
         const docRef = await addDoc(collection(db, "events"), payload)
 

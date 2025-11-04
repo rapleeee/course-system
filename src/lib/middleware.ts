@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { initializeApp, cert, getApps} from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
+import { getFirestore } from 'firebase-admin/firestore'
 
 const serviceAccount = {
   projectId: process.env.FIREBASE_PROJECT_ID,
@@ -10,11 +11,14 @@ const serviceAccount = {
 }
 
 // Inisialisasi admin hanya sekali
-if (!getApps().length) {
+const apps = getApps()
+if (!apps.length) {
   initializeApp({
     credential: cert(serviceAccount),
   })
 }
+
+const adminDb = getFirestore()
 
 export async function middleware(req: NextRequest) {
   const token = req.cookies.get('token')?.value
@@ -29,8 +33,30 @@ export async function middleware(req: NextRequest) {
     try {
       const decodedToken = await getAuth().verifyIdToken(token)
       const email = decodedToken.email
+      const uid = decodedToken.uid
 
-      if (email !== 'admin@gmail.com') {
+      const allowedEmails = new Set(['admin@gmail.com'])
+      let allowAccess = email ? allowedEmails.has(email) : false
+
+      if (!allowAccess) {
+        try {
+          const snap = await adminDb.collection('users').doc(uid).get()
+          if (snap.exists) {
+            const data = snap.data() as { role?: string; roles?: string[] } | undefined
+            const singularRole = data?.role
+            const roles = Array.isArray(data?.roles) ? data?.roles : []
+            allowAccess =
+              singularRole === 'admin' ||
+              singularRole === 'guru' ||
+              roles?.includes?.('admin') ||
+              roles?.includes?.('guru')
+          }
+        } catch (err) {
+          console.error('Failed to load user role for middleware', err)
+        }
+      }
+
+      if (!allowAccess) {
         url.pathname = '/pages/dashboard'
         return NextResponse.redirect(url)
       }

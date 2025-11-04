@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button'
 import { ArrowRight, Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { auth, googleProvider } from '@/lib/firebase'
+import { auth, db, googleProvider } from '@/lib/firebase'
 import { onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
 import axios from 'axios'
 import { toast } from 'sonner'
 import { deleteCookie, setCookie } from 'cookies-next'
@@ -20,6 +21,26 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
+
+  const resolveDestination = async (currentUser: typeof auth.currentUser | null) => {
+    if (!currentUser) return '/auth/login'
+    const adminEmail = currentUser.email === 'admin@gmail.com'
+    if (adminEmail) return '/admin/dashboard'
+    try {
+      const snap = await getDoc(doc(db, 'users', currentUser.uid))
+      if (snap.exists()) {
+        const data = snap.data() as { role?: string; roles?: string[] } | undefined
+        const roles = Array.isArray(data?.roles) ? data?.roles : []
+        const role = data?.role
+        if (role === 'admin' || role === 'guru' || roles.includes('admin') || roles.includes('guru')) {
+          return '/admin/dashboard'
+        }
+      }
+    } catch (err) {
+      console.error('Failed to resolve user role:', err)
+    }
+    return '/pages/dashboard'
+  }
 
   useEffect(() => {
     const fetchQuote = async () => {
@@ -47,8 +68,8 @@ export default function LoginPage() {
       }
 
       if (typeof window !== 'undefined' && window.location.pathname === '/auth/login') {
-        const isAdmin = currentUser.email === 'admin@gmail.com'
-        router.replace(isAdmin ? '/admin/dashboard' : '/pages/dashboard')
+        const destination = await resolveDestination(currentUser)
+        router.replace(destination)
       }
     })
 
@@ -68,8 +89,8 @@ export default function LoginPage() {
       }
 
       toast.success('Login successful!')
-      const isAdmin = credential.user.email === 'admin@gmail.com'
-      router.replace(isAdmin ? '/admin/dashboard' : '/pages/dashboard')
+      const destination = await resolveDestination(credential.user)
+      router.replace(destination)
     } catch (err: unknown) {
       if (err instanceof Error) {
         toast.error('Login failed: ' + err.message)
@@ -92,8 +113,8 @@ export default function LoginPage() {
         setCookie('token', token, { maxAge: 60 * 60 * 24 * 7, path: '/' })
       }
       toast.success('Login successful!')
-      const isAdmin = result.user.email === 'admin@gmail.com'
-      router.replace(isAdmin ? '/admin/dashboard' : '/pages/dashboard')
+      const destination = await resolveDestination(result.user)
+      router.replace(destination)
     } catch (err: unknown) {
       if (err instanceof Error) {
         toast.error('Google login failed: ' + err.message)

@@ -15,6 +15,7 @@ import {
   orderBy,
   query,
   Timestamp,
+  where,
 } from "firebase/firestore";
 import { Filter, Search, Plus } from "lucide-react";
 import Link from "next/link";
@@ -36,6 +37,7 @@ import {
 import { CATEGORIES, STATUSES, MODES } from "@/lib/events-schema";
 import { DataTable } from "@/components/ui/data-table";
 import { eventColumns } from "@/components/feature-events/columns";
+import { useAdminProfile } from "@/hooks/useAdminProfile";
 
 export type Category = (typeof CATEGORIES)[number];
 export type Status = (typeof STATUSES)[number];
@@ -58,6 +60,9 @@ export type EventDoc = {
   startAt: Timestamp | null;
   endAt: Timestamp | null;
   createdAt: Timestamp | null;
+  createdBy?: string;
+  createdByName?: string;
+  createdByEmail?: string | null;
 };
 
 export type Event = EventDoc & { id: string };
@@ -128,12 +133,28 @@ export default function AdminEventsListPage() {
   const [openDelete, setOpenDelete] = useState<boolean>(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  const { user, profile, profileLoading } = useAdminProfile();
+  const userId = user?.uid ?? null;
+  const isGuru = profile?.role === "guru";
+
   useEffect(() => {
-    const q = query(collection(db, "events"), orderBy("startAt", "asc"));
-    const unsub = onSnapshot(
-      q,
+    if (profileLoading) return;
+    if (!userId) {
+      setEvents([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    const baseQuery =
+      isGuru && userId
+        ? query(collection(db, "events"), where("createdBy", "==", userId))
+        : query(collection(db, "events"), orderBy("startAt", "asc"));
+
+    const unsubscribe = onSnapshot(
+      baseQuery,
       (snap) => {
-        const data: Event[] = snap.docs.map((d) => {
+        const rows: Event[] = snap.docs.map((d) => {
           const v = d.data() as Partial<EventDoc>;
           return {
             id: d.id,
@@ -153,9 +174,31 @@ export default function AdminEventsListPage() {
             startAt: (v.startAt as Timestamp | null) ?? null,
             endAt: (v.endAt as Timestamp | null) ?? null,
             createdAt: (v.createdAt as Timestamp | null) ?? null,
+            createdBy: v.createdBy,
+            createdByName: v.createdByName,
+            createdByEmail: v.createdByEmail,
           };
         });
-        setEvents(data);
+
+        const sorted = isGuru
+          ? rows.sort((a, b) => {
+              const aTime =
+                a.createdAt instanceof Timestamp
+                  ? a.createdAt.toMillis()
+                  : typeof a.createdAt === "number"
+                  ? a.createdAt
+                  : 0;
+              const bTime =
+                b.createdAt instanceof Timestamp
+                  ? b.createdAt.toMillis()
+                  : typeof b.createdAt === "number"
+                  ? b.createdAt
+                  : 0;
+              return bTime - aTime;
+            })
+          : rows;
+
+        setEvents(sorted);
         setLoading(false);
       },
       (err) => {
@@ -164,8 +207,9 @@ export default function AdminEventsListPage() {
         setLoading(false);
       }
     );
-    return () => unsub();
-  }, []);
+
+    return () => unsubscribe();
+  }, [isGuru, profileLoading, userId]);
 
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();

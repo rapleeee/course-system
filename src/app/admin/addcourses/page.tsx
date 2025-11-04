@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,7 @@ import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import Link from "next/link";
 import Swal from "sweetalert2"; // ✅ Import SweetAlert2
+import { useAdminProfile } from "@/hooks/useAdminProfile";
 
 type CourseAccessType = "free" | "subscription" | "paid";
 
@@ -23,12 +24,44 @@ export default function AddCoursesPage() {
   const [price, setPrice] = useState<string>("0");
   const [materialType, setMaterialType] = useState("video");
   const [loading, setLoading] = useState(false);
+  const { user, profile, profileLoading } = useAdminProfile();
+
+  const profileName = useMemo(() => {
+    if (!profile) return "";
+    return (
+      (typeof profile.name === "string" && profile.name) ||
+      (typeof profile.nama === "string" && profile.nama) ||
+      (typeof profile.username === "string" && profile.username) ||
+      (typeof profile.email === "string" && profile.email.split("@")[0]) ||
+      ""
+    );
+  }, [profile]);
+
+  const isGuru = profile?.role === "guru";
+
+  useEffect(() => {
+    if (!profileLoading && isGuru && profileName) {
+      setMentor(profileName);
+    }
+  }, [isGuru, profileLoading, profileName]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-   let imageUrl = "https://firebasestorage.googleapis.com/v0/b/sarayaplus.appspot.com/o/default-course.jpg?alt=media";
+    if (!user) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: "Pengguna tidak terautentikasi.",
+        confirmButtonColor: "#e3342f",
+      });
+      setLoading(false);
+      return;
+    }
+
+    const mentorValue = isGuru ? profileName : mentor;
+    let imageUrl = "https://firebasestorage.googleapis.com/v0/b/sarayaplus.appspot.com/o/default-course.jpg?alt=media";
     try {
       if (image) {
         const imageRef = ref(storage, `course-images/${Date.now()}-${image.name}`);
@@ -39,19 +72,22 @@ export default function AddCoursesPage() {
       await addDoc(collection(db, "courses"), {
         title,
         description: desc,
-        mentor,
+        mentor: mentorValue,
         imageUrl,
         accessType,
         price: accessType === "paid" ? Number(price) || 0 : 0,
         isFree: accessType === "free",
         materialType,
         createdAt: serverTimestamp(),
+        createdBy: user.uid,
+        createdByName: profileName || mentorValue,
+        createdByEmail: user.email ?? null,
       });
 
       // Reset form
       setTitle("");
       setDesc("");
-      setMentor("");
+      setMentor(isGuru ? profileName : "");
       setImage(null);
       setAccessType("free");
       setPrice("0");
@@ -118,9 +154,10 @@ export default function AddCoursesPage() {
             className="border rounded-md px-3 py-2 w-full"
             value={mentor}
             onChange={(e) => setMentor(e.target.value)}
+            disabled={isGuru}
             required
           />
-        </div>
+          </div>
 
         <div>
           <Label htmlFor="image" className="block mb-1">Upload Gambar</Label>

@@ -1,25 +1,21 @@
-import AdminLayout from '@/components/layouts/AdminLayout'
-import { Construction } from 'lucide-react'
-import React from 'react'
+"use client";
 
-export default function page() {
+import React from "react";
+import AdminLayout from "@/components/layouts/AdminLayout";
+import LeaderboardContent from "@/components/leaderboard/LeaderboardContent";
+
+export default function AdminLeaderboardPage() {
   return (
-    <AdminLayout pageTitle="Halaman Leaderboard">
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="flex flex-col items-center text-center space-y-6 max-w-md px-4">
-          <Construction className="w-16 h-16 text-yellow-500 animate-bounce" />
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-            Halaman Event Sedang Dalam Perbaikan
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            Kami sedang mengembangkan fitur event untuk pengalaman yang lebih baik.
-            Silakan kembali lagi nanti atau hubungi admin jika ada kebutuhan mendesak.
+    <AdminLayout pageTitle="Leaderboard">
+      <div className="space-y-6">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-semibold tracking-tight">Leaderboard Siswa</h1>
+          <p className="text-sm text-muted-foreground">
+            Tampilan yang sama seperti halaman siswa untuk memantau perolehan poin terbaru.
           </p>
-          <div className="bg-yellow-100 text-yellow-800 text-sm px-4 py-2 rounded shadow">
-            Terima kasih atas kesabaran Anda 🙏
-          </div>
         </div>
+        <LeaderboardContent enableRewards={false} />
       </div>
     </AdminLayout>
-  )
+  );
 }

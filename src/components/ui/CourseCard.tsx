@@ -20,6 +20,7 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { updateDoc } from "firebase/firestore";
 import { toast } from "sonner"; // pastikan kamu sudah install `sonner`
+import { Badge } from "@/components/ui/badge";
 type CourseAccessType = "free" | "subscription" | "paid";
 
 type CourseCardProps = {
@@ -68,67 +69,93 @@ export default function CourseCard({
     imageUrl && imageUrl.trim() !== "" ? imageUrl : "/photos/working.jpg";
 
   const handleEditSubmit = async () => {
-  try {
-    if (!editTitle.trim() || !editMentor.trim()) {
-      toast.error("Judul dan mentor tidak boleh kosong.");
-      return;
+    try {
+      if (!editTitle.trim() || !editMentor.trim()) {
+        toast.error("Judul dan mentor tidak boleh kosong.");
+        return;
+      }
+
+      const ref = doc(db, "courses", id);
+      await updateDoc(ref, {
+        title: editTitle,
+        mentor: editMentor,
+        accessType: editAccessType,
+        price: editAccessType === "paid" ? Number(editPrice) || 0 : 0,
+        isFree: editAccessType === "free",
+      });
+
+      toast.success("Course berhasil diperbarui.");
+      setShowEditModal(false);
+      onDeleted?.(); // pakai untuk refresh list
+    } catch (error) {
+      console.error("Gagal update course:", error);
+      toast.error("Gagal memperbarui course.");
     }
+  };
 
-    const ref = doc(db, "courses", id);
-    await updateDoc(ref, {
-      title: editTitle,
-      mentor: editMentor,
-      accessType: editAccessType,
-      price: editAccessType === "paid" ? Number(editPrice) || 0 : 0,
-      isFree: editAccessType === "free",
-    });
+  const accessLabel =
+    normalizedAccess === "paid"
+      ? "Berbayar"
+      : normalizedAccess === "subscription"
+      ? "Subscriber"
+      : "Gratis";
 
-    toast.success("Course berhasil diperbarui.");
-    setShowEditModal(false);
-    onDeleted?.(); // pakai untuk refresh list
-  } catch (error) {
-    console.error("Gagal update course:", error);
-    toast.error("Gagal memperbarui course.");
-  }
-};
+  const priceLabel =
+    normalizedAccess === "paid"
+      ? `Berbayar • Rp ${displayedPrice.toLocaleString("id-ID")}`
+      : normalizedAccess === "subscription"
+      ? "Hanya Subscriber"
+      : "Gratis";
+
+  const accessBadgeVariant =
+    normalizedAccess === "paid"
+      ? "default"
+      : normalizedAccess === "subscription"
+      ? "secondary"
+      : "outline";
+
+  const priceTextClass =
+    normalizedAccess === "paid" ? "text-primary font-semibold" : "text-muted-foreground";
 
   return (
-    <Card className="flex flex-col border rounded-lg hover:shadow transition relative group">
-      {/* Area yang dapat diklik untuk buka detail */}
+    <Card className="relative flex h-full flex-col overflow-hidden rounded-xl border border-border/60 bg-card/90 px-0 py-0 shadow-sm transition-colors duration-200 dark:border-border/40">
       <Link
         href={`/admin/course/${id}`}
-        className="p-4 block cursor-pointer hover:bg-gray-50 dark:hover:bg-neutral-800 transition rounded-t-lg"
+        className="group flex flex-1 flex-col gap-4 p-4"
       >
-        <div className="relative w-full h-40 rounded-md overflow-hidden mb-3 bg-muted">
+        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border border-border/40 bg-muted">
           <Image
             src={displayedImage}
             alt={title}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
-            className="object-cover"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
             priority={false}
           />
         </div>
-        <div className="flex flex-col items-start text-left mb-3">
-          <h3 className="text-lg font-semibold">{title}</h3>
-          <p className="text-sm text-gray-500">Mentor: {mentor}</p>
-          <p className="text-sm text-gray-500">
-            Tipe: {materialType} |{" "}
-            {normalizedAccess === "free"
-              ? "Gratis"
-              : normalizedAccess === "subscription"
-              ? "Hanya Subscriber"
-              : `Berbayar • Rp ${displayedPrice.toLocaleString("id-ID")}`}
+        <div className="flex flex-1 flex-col gap-3 text-left">
+          <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-muted-foreground">
+            <Badge variant="secondary" className="uppercase tracking-wide">
+              {materialType}
+            </Badge>
+            <Badge variant={accessBadgeVariant}>{accessLabel}</Badge>
+          </div>
+          <h3 className="text-lg font-semibold leading-tight line-clamp-2">
+            {title}
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Mentor: <span className="font-medium text-foreground">{mentor}</span>
           </p>
+          <p className={`text-sm ${priceTextClass}`}>{priceLabel}</p>
         </div>
       </Link>
 
-      {/* Tombol Edit & Hapus */}
-      <div className="flex gap-2 px-4 pb-4">
+      <div className="flex items-center gap-2 border-t border-border/60 bg-card/80 px-4 py-4">
         <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
           <DialogTrigger asChild>
             <Button
               size="sm"
+              className="flex-1"
               variant="outline"
               onClick={(e) => e.stopPropagation()}
             >
@@ -190,6 +217,7 @@ export default function CourseCard({
           <DialogTrigger asChild>
             <Button
               size="sm"
+              className="flex-1"
               variant="destructive"
               onClick={(e) => e.stopPropagation()}
             >

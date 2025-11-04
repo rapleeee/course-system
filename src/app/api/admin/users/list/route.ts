@@ -11,10 +11,9 @@ type Profile = {
   nama?: string;
   username?: string;
   email?: string;
-  nisn?: string;
-  gender?: string;
-  jenisKelamin?: string;
   role?: "guru" | "murid";
+  photoURL?: string;
+  level?: string;
 };
 
 async function listAllUsers(): Promise<{ uid: string; email?: string | null; displayName?: string | null }[]> {
@@ -55,10 +54,9 @@ export async function GET() {
         nama: p.nama,
         email,
         username,
-        nisn: p.nisn || undefined,
-        gender: p.gender || undefined,
-        jenisKelamin: p.jenisKelamin || undefined,
         role,
+        photoURL: p.photoURL || undefined,
+        level: p.level || undefined,
       };
     });
 
