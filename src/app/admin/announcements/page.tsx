@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { db } from "@/lib/firebase";
 import {
@@ -15,8 +15,9 @@ import {
   updateDoc,
   limit,
   startAfter,
+  where,
 } from "firebase/firestore";
-import type { Timestamp, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
+import type { Timestamp, QueryDocumentSnapshot, DocumentData, QueryConstraint } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -26,6 +27,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useAdminProfile } from "@/hooks/useAdminProfile";
 
 type Announcement = {
   id: string;
@@ -33,6 +35,8 @@ type Announcement = {
   body?: string;
   courseId?: string;
   createdAt?: Timestamp;
+  createdBy?: string;
+  createdByName?: string;
 };
 
 export default function AnnouncementsAdminPage() {
@@ -59,25 +63,76 @@ export default function AnnouncementsAdminPage() {
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [confirmTitle, setConfirmTitle] = useState<string>("");
 
-  const load = async () => {
-    setLoading(true);
-    const q = query(collection(db, "announcements"), orderBy("createdAt", "desc"), limit(10));
-    const snap = await getDocs(q);
-    setItems(
-      snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Announcement, "id">) })) as Announcement[]
+  const { user, profile, profileLoading } = useAdminProfile();
+  const userId = user?.uid ?? null;
+  const isGuru = profile?.role === "guru";
+
+  const profileName = useMemo(() => {
+    const fallback = user?.email ? user.email.split("@")[0] ?? "" : "";
+    if (!profile) return fallback;
+    return (
+      (typeof profile.name === "string" && profile.name) ||
+      (typeof profile.nama === "string" && profile.nama) ||
+      (typeof profile.username === "string" && profile.username) ||
+      (typeof profile.email === "string" && profile.email.split("@")[0]) ||
+      fallback
     );
-    setLastDoc(snap.docs[snap.docs.length - 1] ?? null);
-    setHasMore(snap.docs.length === 10);
-    setLoading(false);
-  };
+  }, [profile, user?.email]);
+
+  const load = useCallback(
+    async (cursor: QueryDocumentSnapshot<DocumentData> | null = null) => {
+      if (!userId) {
+        setItems([]);
+        setLastDoc(null);
+        setHasMore(false);
+        setLoading(false);
+        return;
+      }
+
+      const constraints: QueryConstraint[] = [];
+      if (isGuru) {
+        constraints.push(where("createdBy", "==", userId));
+      }
+      constraints.push(orderBy("createdAt", "desc"));
+      if (cursor) {
+        constraints.push(startAfter(cursor));
+      }
+      constraints.push(limit(10));
+
+      try {
+        const q = query(collection(db, "announcements"), ...constraints);
+        const snap = await getDocs(q);
+        const rows = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Announcement, "id">) })) as Announcement[];
+        if (cursor) {
+          setItems((prev) => [...prev, ...rows]);
+        } else {
+          setItems(rows);
+        }
+        setLastDoc(snap.docs[snap.docs.length - 1] ?? null);
+        setHasMore(snap.docs.length === 10);
+      } catch (err) {
+        console.error("Failed to load announcements", err);
+        toast.error("Gagal memuat pengumuman.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [isGuru, userId]
+  );
 
   useEffect(() => {
-    load();
-  }, []);
+    if (profileLoading) return;
+    setLoading(true);
+    void load(null);
+  }, [load, profileLoading]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
+    if (!userId) {
+      toast.error("Pengguna tidak terautentikasi.");
+      return;
+    }
     setSaving(true);
     try {
       await addDoc(collection(db, "announcements"), {
@@ -85,12 +140,14 @@ export default function AnnouncementsAdminPage() {
         body: body.trim() || null,
         courseId: courseId.trim() || null,
         createdAt: serverTimestamp(),
+        createdBy: userId,
+        createdByName: profileName || title.trim(),
       });
       toast.success("Pengumuman ditambahkan.");
       setTitle("");
       setBody("");
       setCourseId("");
-      await load();
+      await load(null);
     } catch (err) {
       console.error(err);
       toast.error("Gagal menambahkan pengumuman.");
@@ -104,7 +161,7 @@ export default function AnnouncementsAdminPage() {
     try {
       await deleteDoc(doc(db, "announcements", id));
       toast.success("Pengumuman dihapus.");
-      await load();
+      await load(null);
     } catch (err) {
       console.error(err);
       toast.error("Gagal menghapus pengumuman.");
@@ -115,21 +172,8 @@ export default function AnnouncementsAdminPage() {
 
   const loadMore = async () => {
     if (!lastDoc) return;
-    const q = query(
-      collection(db, "announcements"),
-      orderBy("createdAt", "desc"),
-      startAfter(lastDoc),
-      limit(10)
-    );
-    const snap = await getDocs(q);
-    setItems((prev) => [
-      ...prev,
-      ...(
-        snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Announcement, "id">) })) as Announcement[]
-      ),
-    ]);
-    setLastDoc(snap.docs[snap.docs.length - 1] ?? null);
-    setHasMore(snap.docs.length === 10);
+    setLoading(true);
+    await load(lastDoc);
   };
 
   const openEdit = (a: Announcement) => {
@@ -152,7 +196,7 @@ export default function AnnouncementsAdminPage() {
       });
       setEditOpen(false);
       toast.success("Pengumuman diperbarui.");
-      await load();
+      await load(null);
     } catch (err) {
       console.error(err);
       toast.error("Gagal memperbarui pengumuman.");
@@ -221,6 +265,9 @@ export default function AnnouncementsAdminPage() {
                         <div className="font-medium">{a.title}</div>
                         {a.body && <div className="text-sm text-muted-foreground">{a.body}</div>}
                         <div className="text-xs text-muted-foreground mt-1">{t}</div>
+                        {a.createdByName ? (
+                          <div className="text-xs text-muted-foreground mt-1">Oleh {a.createdByName}</div>
+                        ) : null}
                         {a.courseId && (
                           <div className="text-xs mt-1">Course ID: <span className="font-mono">{a.courseId}</span></div>
                         )}

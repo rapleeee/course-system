@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
-import { useAuth } from "@/lib/useAuth";
+import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { db, auth } from "@/lib/firebase";
 import { addDoc, collection, onSnapshot, orderBy, query, serverTimestamp, Timestamp, updateDoc, deleteDoc, doc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,8 @@ type Assignment = {
   createdAt?: Timestamp;
   autoGrading?: boolean;
   questions?: QuizQuestion[];
+  createdBy?: string;
+  createdByName?: string;
 };
 
 const genId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -325,7 +327,20 @@ function DocxImportHelp({ context }: { context: "create" | "edit" }) {
 
 export default function AdminAssignmentsPage() {
   const MySwal = withReactContent(Swal);
-  const { user } = useAuth();
+  const { user, profile, profileLoading } = useAdminProfile();
+  const userId = user?.uid ?? null;
+  const isGuru = profile?.role === "guru";
+  const profileName = useMemo(() => {
+    const fallback = user?.email ? user.email.split("@")[0] ?? "" : "";
+    if (!profile) return fallback;
+    return (
+      (typeof profile.name === "string" && profile.name) ||
+      (typeof profile.nama === "string" && profile.nama) ||
+      (typeof profile.username === "string" && profile.username) ||
+      (typeof profile.email === "string" && profile.email.split("@")[0]) ||
+      fallback
+    );
+  }, [profile, user?.email]);
   const [list, setList] = useState<Assignment[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -346,13 +361,19 @@ export default function AdminAssignmentsPage() {
   const [importingDoc, setImportingDoc] = useState(false);
 
   useEffect(() => {
+    if (profileLoading) return;
+    if (!userId) {
+      setList([]);
+      return;
+    }
     const q = query(collection(db, "assignments"), orderBy("createdAt", "desc"));
     const unsub = onSnapshot(q, (snap) => {
       const rows = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Assignment, "id">) }));
-      setList(rows as Assignment[]);
+      const scoped = isGuru ? rows.filter((row) => row.createdBy === userId) : rows;
+      setList(scoped as Assignment[]);
     });
     return () => unsub();
-  }, []);
+  }, [isGuru, profileLoading, userId]);
 
   useEffect(() => {
     if (type !== "quiz") {
@@ -459,6 +480,7 @@ export default function AdminAssignmentsPage() {
         dueAt: null,
         createdAt: serverTimestamp(),
         createdBy: user.uid,
+        createdByName: profileName || title,
       });
       toast.success("Berhasil membuat tugas/kuis");
       setTitle("");

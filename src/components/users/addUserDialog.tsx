@@ -1,7 +1,7 @@
 // components/users/AddUserDialog.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +17,7 @@ import { collection, doc, setDoc, getDocs, query, where } from "firebase/firesto
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { toast } from "sonner";
+import { Label } from "@/components/ui/label";
 
 export default function AddUserDialog({ onUserAdded }: { onUserAdded: () => void }) {
   const [open, setOpen] = useState(false);
@@ -25,15 +26,23 @@ export default function AddUserDialog({ onUserAdded }: { onUserAdded: () => void
   const [nama, setNama] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
-  const [nisn, setNisn] = useState("");
-  const [jenisKelamin, setJenisKelamin] = useState("Laki-laki");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("murid");
+
+  useEffect(() => {
+    if (!open) {
+      setNama("");
+      setUsername("");
+      setEmail("");
+      setPassword("");
+      setRole("murid");
+    }
+  }, [open]);
 
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      // Validasi unik username, email, nisn/nip
+      // Validasi unik username & email
       const q = query(collection(db, "users"), where("username", "==", username));
       const snap = await getDocs(q);
       if (!snap.empty) {
@@ -50,14 +59,6 @@ export default function AddUserDialog({ onUserAdded }: { onUserAdded: () => void
         return;
       }
 
-      const nisnQ = query(collection(db, "users"), where("nisn", "==", nisn));
-      const nisnSnap = await getDocs(nisnQ);
-      if (!nisnSnap.empty) {
-        toast.error("NISN/NIP sudah digunakan.");
-        setLoading(false);
-        return;
-      }
-
       // Buat user di Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const uid = userCredential.user.uid;
@@ -69,8 +70,6 @@ export default function AddUserDialog({ onUserAdded }: { onUserAdded: () => void
         nama,
         username,
         email,
-        nisn,
-        jenisKelamin,
         role,
         createdAt: new Date(),
       });
@@ -79,12 +78,14 @@ export default function AddUserDialog({ onUserAdded }: { onUserAdded: () => void
       onUserAdded();
       setOpen(false);
     } catch (err: unknown) {
-  if (err instanceof Error) {
-    toast.error("Gagal menambahkan user: " + err.message);
-  } else {
-    toast.error("Gagal menambahkan user karena error tidak diketahui.");
-  }
-}
+      if (err instanceof Error) {
+        toast.error("Gagal menambahkan user: " + err.message);
+      } else {
+        toast.error("Gagal menambahkan user karena error tidak diketahui.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -96,28 +97,57 @@ export default function AddUserDialog({ onUserAdded }: { onUserAdded: () => void
         <DialogHeader>
           <DialogTitle>Tambah Pengguna Baru</DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
-          <Input placeholder="Nama Lengkap" value={nama} onChange={(e) => setNama(e.target.value)} />
-          <Input placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
-          <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <Input placeholder="NISN/NIP" value={nisn} onChange={(e) => setNisn(e.target.value)} />
-          <select
-            className="w-full border rounded p-2 text-sm"
-            value={jenisKelamin}
-            onChange={(e) => setJenisKelamin(e.target.value)}
-          >
-            <option value="Laki-laki">Laki-laki</option>
-            <option value="Perempuan">Perempuan</option>
-          </select>
-          <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-          <select
-            className="w-full border rounded p-2 text-sm"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-          >
-            <option value="murid">Murid</option>
-            <option value="guru">Guru</option>
-          </select>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="add-user-name">Nama Lengkap</Label>
+            <Input
+              id="add-user-name"
+              placeholder="Contoh: Raditya Panji"
+              value={nama}
+              onChange={(e) => setNama(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="add-user-username">Username</Label>
+            <Input
+              id="add-user-username"
+              placeholder="Contoh: raditya.panji"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="add-user-email">Email</Label>
+            <Input
+              id="add-user-email"
+              type="email"
+              placeholder="nama@domain.sch.id"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="add-user-password">Password</Label>
+            <Input
+              id="add-user-password"
+              type="password"
+              placeholder="Minimal 8 karakter"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="add-user-role">Role Pengguna</Label>
+            <select
+              id="add-user-role"
+              className="w-full rounded border px-3 py-2 text-sm"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+            >
+              <option value="murid">Murid</option>
+              <option value="guru">Guru</option>
+            </select>
+          </div>
         </div>
         <DialogFooter className="mt-4">
           <DialogClose asChild>
