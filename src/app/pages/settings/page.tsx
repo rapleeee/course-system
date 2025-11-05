@@ -7,6 +7,7 @@ import Link from "next/link";
 import { doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import EditProfileModal from "@/components/EditProfileModal";
 import Image from "next/image";
 import { getAuth, sendPasswordResetEmail } from "firebase/auth";
@@ -16,7 +17,7 @@ import { toast } from "sonner";
 type ProfileData = {
   name?: string;
   email?: string;
-  level?: string;
+  level?: string | null;
   description?: string;
   photoURL?: string;
   claimedCourses?: string[];
@@ -25,6 +26,18 @@ type ProfileData = {
 type SubStatus =
   | "active" | "expired" | "pending" | "cancel" | "deny"
   | "failure" | "refund" | "chargeback" | "capture" | "settlement";
+
+const LEVEL_LABELS: Record<string, string> = {
+  beginner: "Beginner",
+  intermediate: "Intermediate",
+  master: "Master",
+};
+
+const formatLevelLabel = (value?: string | null) => {
+  if (!value) return "Belum ditentukan";
+  const normalized = value.toLowerCase();
+  return LEVEL_LABELS[normalized] ?? "Belum ditentukan";
+};
 
 export default function SettingsPage() {
   const { user, loading } = useAuth();
@@ -150,7 +163,7 @@ export default function SettingsPage() {
             <div className="min-w-0">
               <h2 className="text-2xl font-bold truncate">{profile?.name || "Tanpa Nama"}</h2>
               <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                <span>Level: {profile?.level || "Belum ditentukan"}</span>
+                <span>Level: {formatLevelLabel(profile?.level)}</span>
                 <span>•</span>
                 <span>Kelas diikuti: {profile?.claimedCourses?.length ?? 0}</span>
               </div>
@@ -192,6 +205,41 @@ export default function SettingsPage() {
         <div className="rounded-xl border bg-card p-6 shadow-sm md:col-span-2">
           <h3 className="text-lg font-semibold">Preferensi</h3>
           <p className="mt-2 text-sm text-muted-foreground">Mode gelap/terang dapat diubah dari tombol kanan atas. Preferensi lainnya akan segera hadir.</p>
+        </div>
+
+        <div className="rounded-xl border bg-card p-6 shadow-sm md:col-span-2 space-y-4">
+          <div>
+            <h3 className="text-lg font-semibold">Informasi Profil & Kebijakan</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Ketahui bagaimana data kamu digunakan serta dukungan apa saja yang tersedia untuk memastikan pengalaman belajar tetap aman.
+            </p>
+          </div>
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="privacy">
+              <AccordionTrigger className="text-left">Kebijakan Privasi</AccordionTrigger>
+              <AccordionContent>
+                <p className="text-sm text-muted-foreground">
+                  Data profil seperti nama, level, dan deskripsi membantu kami menyesuaikan rekomendasi kelas serta pengalaman mentor. Informasi ini hanya digunakan di dalam platform dan tidak dibagikan ke pihak ketiga tanpa izinmu. Kamu bisa memperbarui atau menghapus data kapan saja melalui form edit profil.
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="terms">
+              <AccordionTrigger className="text-left">Syarat Penggunaan</AccordionTrigger>
+              <AccordionContent>
+                <p className="text-sm text-muted-foreground">
+                  Dengan menggunakan platform, kamu setuju untuk menjaga keamanan kredensial, tidak membagikan akses akun, serta mematuhi aturan komunitas saat berinteraksi di forum dan kelas live. Pelanggaran berat dapat mengakibatkan pembatasan akses agar lingkungan belajar tetap kondusif.
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="support">
+              <AccordionTrigger className="text-left">Dukungan & Bantuan</AccordionTrigger>
+              <AccordionContent>
+                <p className="text-sm text-muted-foreground">
+                  Butuh bantuan lebih lanjut? Tim support siap membantu terkait perubahan data pribadi, permintaan penghapusan akun, maupun pertanyaan keamanan. Gunakan tombol reset password di atas atau hubungi admin melalui kanal resmi komunitas.
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
 
         {modalOpen && user && profile && (

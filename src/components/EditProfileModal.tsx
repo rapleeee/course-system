@@ -11,16 +11,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { toast } from "sonner";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
+const LEVEL_OPTIONS = ["beginner", "intermediate", "master"] as const;
+type LevelOption = (typeof LEVEL_OPTIONS)[number];
+
+const normalizeLevel = (value?: string | null): LevelOption | "" => {
+  if (!value) return "";
+  const normalized = value.toLowerCase() as LevelOption;
+  return LEVEL_OPTIONS.includes(normalized) ? normalized : "";
+};
+
 type Props = {
   userId: string;
   initialData: {
     name?: string;
-    level?: string;
+    level?: string | null;
     description?: string;
     photoURL?: string;
     email?: string;
@@ -36,7 +46,7 @@ export default function EditProfileModal({
   onUpdated,
 }: Props) {
   const [name, setName] = useState(initialData?.name || "");
-  const [level, setLevel] = useState(initialData?.level || "");
+  const [level, setLevel] = useState<string>(normalizeLevel(initialData?.level));
   const [description, setDescription] = useState(initialData?.description || "");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -71,7 +81,7 @@ export default function EditProfileModal({
         userRef,
         {
           name,
-          level,
+          level: level || "",
           description,
           photoURL,
           email: initialData?.email || "",
@@ -105,7 +115,16 @@ export default function EditProfileModal({
 
           <div>
             <Label className="mb-2">Level</Label>
-            <Input value={level} onChange={(e) => setLevel(e.target.value)} />
+            <Select value={level || undefined} onValueChange={setLevel}>
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih level belajar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="beginner">Beginner</SelectItem>
+                <SelectItem value="intermediate">Intermediate</SelectItem>
+                <SelectItem value="master">Master</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div>

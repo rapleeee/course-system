@@ -2,9 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/useAuth";
-import { db } from "@/lib/firebase";
-import { doc, getDoc, collection, getDocs, query, orderBy, setDoc, serverTimestamp, arrayUnion, arrayRemove, type FieldValue } from "firebase/firestore";
-import { useEffect, useState, type ReactNode, type SyntheticEvent } from "react";
+import { useEffect, useRef, useState, type ReactNode, type SyntheticEvent } from "react";
 import Layout from "@/components/layout";
 import Link from "next/link";
 import Image from "next/image";
@@ -15,15 +13,17 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
+import type { User } from "firebase/auth";
+import { toast } from "sonner";
 
 type Course = {
   title: string;
   description: string;
   mentor: string;
   imageUrl: string;
-  accessType?: "free" | "subscription" | "paid";
+  accessType?: "free" | "subscription" | "paid" | string;
   isFree?: boolean;
-  price?: number;
+  price?: number | null;
   materialType: string;
 };
 
@@ -59,6 +59,7 @@ const SecureContentWrapper = ({ children, watermark }: { children: ReactNode; wa
       onCopy={handlePrevent}
       onCut={handlePrevent}
       onDragStart={handlePrevent}
+      onPaste={handlePrevent}
       draggable={false}
     >
       {children}
@@ -140,9 +141,11 @@ export default function CourseDetailPage() {
   const { user, loading: authLoading } = useAuth();
   const [course, setCourse] = useState<Course | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
-  const [hasAccess, setHasAccess] = useState(false);
+  const [hasAccess, setHasAccess] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+  const securePageRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const secureSelector = "[data-secure-content='true']";
@@ -192,10 +195,131 @@ export default function CourseDetailPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const blockedCtrlKeys = new Set(["s", "p", "u", "c", "x", "i", "j", "k"]);
+
+    const isWithinSecureScope = (event?: Event) => {
+      const root = securePageRef.current;
+      if (!root) return false;
+
+      const active = document.activeElement;
+      if (active && root.contains(active)) return true;
+
+      if (active === document.body) return true;
+
+      const selection = window.getSelection();
+      const anchorNode = selection?.anchorNode;
+      const anchorElement =
+        anchorNode instanceof Element ? anchorNode : anchorNode?.parentElement || null;
+      if (anchorElement && root.contains(anchorElement)) return true;
+
+      if (!event) return false;
+      if (typeof event.composedPath === "function") {
+        return event.composedPath().includes(root);
+      }
+
+      const target = event.target as Node | null;
+      return Boolean(target && root.contains(target));
+    };
+
+    const blockContextMenu = (event: MouseEvent) => {
+      if (isWithinSecureScope(event)) {
+        event.preventDefault();
+      }
+    };
+
+    const blockKeyDown = (event: KeyboardEvent) => {
+      if (!isWithinSecureScope()) return;
+
+      const ctrlOrMeta = event.ctrlKey || event.metaKey;
+      const key = event.key.toLowerCase();
+
+      const shouldBlockWithModifier = ctrlOrMeta && blockedCtrlKeys.has(key);
+      const isFunctionBlock =
+        key === "f12" ||
+        key === "printscreen" ||
+        (event.altKey && key === "printscreen");
+
+      if (shouldBlockWithModifier || isFunctionBlock) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (key === "printscreen" && "clipboard" in navigator && typeof navigator.clipboard.writeText === "function") {
+          navigator.clipboard.writeText("Tangkapan layar dinonaktifkan untuk konten ini.").catch(() => {});
+        }
+      }
+    };
+
+    const blockClipboard = (event: ClipboardEvent) => {
+      if (isWithinSecureScope(event)) {
+        event.preventDefault();
+      }
+    };
+
+    const disableSelection = (event: Event) => {
+      if (isWithinSecureScope(event)) {
+        event.preventDefault();
+      }
+    };
+
+    const addNoPrintClass = () => {
+      document.body.classList.add("no-print");
+    };
+
+    const removeNoPrintClass = () => {
+      document.body.classList.remove("no-print");
+    };
+
+    window.addEventListener("contextmenu", blockContextMenu, true);
+    window.addEventListener("keydown", blockKeyDown, true);
+    document.addEventListener("copy", blockClipboard, true);
+    document.addEventListener("cut", blockClipboard, true);
+    document.addEventListener("paste", blockClipboard, true);
+    document.addEventListener("selectstart", disableSelection, true);
+    window.addEventListener("beforeprint", addNoPrintClass);
+    window.addEventListener("afterprint", removeNoPrintClass);
+
+    const styleEl = document.createElement("style");
+    styleEl.dataset.courseSecurity = "true";
+    styleEl.textContent = `
+      @media print {
+        body.no-print * {
+          visibility: hidden !important;
+        }
+        body.no-print::before {
+          content: "Printing dinonaktifkan untuk konten ini.";
+          visibility: visible !important;
+          display: block;
+          padding: 2rem;
+          font-size: 1.25rem;
+          text-align: center;
+        }
+      }
+    `;
+    document.head.appendChild(styleEl);
+
+    return () => {
+      window.removeEventListener("contextmenu", blockContextMenu, true);
+      window.removeEventListener("keydown", blockKeyDown, true);
+      document.removeEventListener("copy", blockClipboard, true);
+      document.removeEventListener("cut", blockClipboard, true);
+      document.removeEventListener("paste", blockClipboard, true);
+      document.removeEventListener("selectstart", disableSelection, true);
+      window.removeEventListener("beforeprint", addNoPrintClass);
+      window.removeEventListener("afterprint", removeNoPrintClass);
+      document.body.classList.remove("no-print");
+      if (styleEl.parentNode) {
+        styleEl.parentNode.removeChild(styleEl);
+      }
+    };
+  }, []);
+
   const handleToggleChapterCompleted = async (chapterId: string) => {
     if (!user || !id) return;
+    const previous = new Set(completedIds);
     const isCompleted = completedIds.has(chapterId);
-    // Optimistic update
     setCompletedIds((prev) => {
       const next = new Set(prev);
       if (isCompleted) next.delete(chapterId);
@@ -203,23 +327,19 @@ export default function CourseDetailPage() {
       return next;
     });
     try {
-      await updateProgress(
-        db,
-        user.uid,
+      const result = await mutateCourseProgress(
+        user,
         id as string,
         chapterId,
-        isCompleted ? "remove" : "add",
-        { title: course?.title, imageUrl: course?.imageUrl }
+        isCompleted ? "remove" : "add"
       );
+      if (result?.completedChapterIds) {
+        setCompletedIds(new Set(result.completedChapterIds));
+      }
     } catch (err) {
       console.error("Failed to update progress", err);
-      // Revert on failure
-      setCompletedIds((prev) => {
-        const next = new Set(prev);
-        if (isCompleted) next.add(chapterId);
-        else next.delete(chapterId);
-        return next;
-      });
+      setCompletedIds(new Set(previous));
+      toast.error("Gagal memperbarui progres. Coba lagi.");
     }
   };
 
@@ -232,50 +352,81 @@ export default function CourseDetailPage() {
   useEffect(() => {
     if (!id || !user) return;
 
-    const fetchData = async () => {
+    let cancelled = false;
+
+    const fetchSecuredCourse = async () => {
       setIsLoading(true);
+      setNotFound(false);
+
       try {
-        // Fetch course data
-        const courseSnap = await getDoc(doc(db, "courses", id as string));
-        if (courseSnap.exists()) {
-          setCourse(courseSnap.data() as Course);
-        }
+        const token = await user.getIdToken();
+        const response = await fetch(`/api/courses/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-        // Check user access
-        const userSnap = await getDoc(doc(db, "users", user.uid));
-        if (userSnap.exists()) {
-          const userData = userSnap.data();
-          const claimedCourses = userData.claimedCourses || [];
-          setHasAccess(claimedCourses.includes(id));
-        }
+        if (cancelled) return;
 
-        // Fetch chapters
-        const chapterRef = collection(db, "courses", id as string, "chapters");
-        const q = query(chapterRef, orderBy("createdAt", "asc"));
-        const chapterSnap = await getDocs(q);
-        const chapterData = chapterSnap.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Chapter[];
-        setChapters(chapterData);
-
-        // Fetch progress for this course
-        const progressRef = doc(db, "users", user.uid, "progress", id as string);
-        const progressSnap = await getDoc(progressRef);
-        if (progressSnap.exists()) {
-          const data = progressSnap.data() as { completedChapterIds?: string[] };
-          setCompletedIds(new Set(data.completedChapterIds || []));
-        } else {
+        if (response.status === 403) {
+          setHasAccess(false);
+          setCourse(null);
+          setChapters([]);
           setCompletedIds(new Set());
+          setIsLoading(false);
+          return;
         }
+
+        if (response.status === 404) {
+          setNotFound(true);
+          setCourse(null);
+          setHasAccess(true);
+          setChapters([]);
+          setCompletedIds(new Set());
+          setIsLoading(false);
+          return;
+        }
+
+        if (!response.ok) {
+          const message = await response.json().catch(() => ({}));
+          throw new Error(message?.error || "Gagal memuat data kursus.");
+        }
+
+        const payload = await response.json();
+
+        if (cancelled) return;
+
+        setCourse(payload.course ?? null);
+        setChapters(Array.isArray(payload.chapters) ? payload.chapters : []);
+        setHasAccess(payload.hasAccess !== false);
+        setCompletedIds(
+          new Set(
+            Array.isArray(payload.progress?.completedChapterIds)
+              ? payload.progress.completedChapterIds
+              : []
+          )
+        );
       } catch (error) {
-        console.error('Error fetching data:', error);
+        const message = error instanceof Error ? error.message : String(error);
+        console.error("Failed to load course data securely:", message);
+        if (!cancelled) {
+          setCourse(null);
+          setChapters([]);
+          setCompletedIds(new Set());
+          setHasAccess(true);
+        }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     };
 
-    fetchData();
+    fetchSecuredCourse();
+
+    return () => {
+      cancelled = true;
+    };
   }, [id, user]);
 
   if (isLoading) {
@@ -286,17 +437,6 @@ export default function CourseDetailPage() {
           className="animate-spin rounded-full h-12 w-12 border-2 border-muted-foreground/30 border-t-foreground"
         />
       </div>
-    );
-  }
-
-  if (!course) {
-    return (
-      <Layout pageTitle="Kelas Tidak Ditemukan">
-        <div className="text-center p-10">
-          <p className="text-lg font-semibold mb-2">Kelas tidak ditemukan.</p>
-          <p className="text-muted-foreground">Silakan kembali ke halaman Kelas.</p>
-        </div>
-      </Layout>
     );
   }
 
@@ -316,9 +456,24 @@ export default function CourseDetailPage() {
     );
   }
 
+  if (notFound || !course) {
+    return (
+      <Layout pageTitle="Kelas Tidak Ditemukan">
+        <div className="text-center p-10">
+          <p className="text-lg font-semibold mb-2">Kelas tidak ditemukan.</p>
+          <p className="text-muted-foreground">Silakan kembali ke halaman Kelas.</p>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout pageTitle={course.title}>
-      <div className="space-y-6 max-w-5xl mx-auto">
+      <div
+        ref={securePageRef}
+        data-course-secure-root="true"
+        className="space-y-6 max-w-full mx-auto"
+      >
         {/* Course Header */}
         <div className="rounded-lg overflow-hidden shadow-sm border bg-card">
           <div className="relative h-48 md:h-64">
@@ -405,26 +560,79 @@ export default function CourseDetailPage() {
   );
 }
 
-async function updateProgress(
-  db: typeof import("@/lib/firebase").db,
-  userId: string,
+type ProgressMutationResult = {
+  completedChapterIds: string[];
+  updatedAt: string | null;
+} | null;
+
+async function mutateCourseProgress(
+  user: User,
   courseId: string,
   chapterId: string,
-  action: "add" | "remove",
-  courseMeta?: { title?: string; imageUrl?: string }
-) {
-  const progressRef = doc(db, "users", userId, "progress", courseId);
-  const payload: { updatedAt: FieldValue; completedChapterIds?: FieldValue; courseTitle?: string; courseImageUrl?: string } = {
-    updatedAt: serverTimestamp(),
-  };
-  if (courseMeta?.title) payload.courseTitle = courseMeta.title;
-  if (courseMeta?.imageUrl) payload.courseImageUrl = courseMeta.imageUrl;
+  action: "add" | "remove"
+): Promise<ProgressMutationResult> {
+  const token = await user.getIdToken();
+  const response = await fetch(`/api/courses/${courseId}/progress`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ chapterId, action }),
+  });
 
-  if (action === "add") {
-    payload.completedChapterIds = arrayUnion(chapterId);
-  } else {
-    payload.completedChapterIds = arrayRemove(chapterId);
+  const text = await response.text();
+  let payload: unknown;
+  if (text) {
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      payload = undefined;
+    }
   }
 
-  await setDoc(progressRef, payload, { merge: true });
+  if (!response.ok) {
+    const message = (() => {
+      if (payload && typeof payload === "object" && payload !== null && "error" in payload) {
+        const raw = (payload as { error?: unknown }).error;
+        if (typeof raw === "string") {
+          return raw;
+        }
+      }
+      return "Gagal menyimpan progres.";
+    })();
+    throw new Error(message);
+  }
+
+  const progressPayload =
+    payload && typeof payload === "object" && payload !== null && "progress" in payload
+      ? (payload as { progress?: unknown }).progress
+      : undefined;
+
+  const ids = Array.isArray(
+    progressPayload && typeof progressPayload === "object" && progressPayload !== null
+      ? (progressPayload as { completedChapterIds?: unknown }).completedChapterIds
+      : null
+  )
+    ? (
+        (progressPayload as {
+          completedChapterIds: unknown[];
+        }).completedChapterIds ?? []
+      ).filter((value: unknown): value is string => typeof value === "string")
+    : null;
+
+  if (!ids) return null;
+
+  const updatedAt =
+    progressPayload &&
+    typeof progressPayload === "object" &&
+    progressPayload !== null &&
+    typeof (progressPayload as { updatedAt?: unknown }).updatedAt === "string"
+      ? (progressPayload as { updatedAt: string }).updatedAt
+      : null;
+
+  return {
+    completedChapterIds: ids,
+    updatedAt,
+  };
 }
