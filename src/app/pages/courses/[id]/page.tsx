@@ -13,8 +13,10 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
 import type { User } from "firebase/auth";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Course = {
   title: string;
@@ -145,7 +147,10 @@ export default function CourseDetailPage() {
   const [notFound, setNotFound] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
   const securePageRef = useRef<HTMLDivElement | null>(null);
+  const handleRetry = () => setReloadToken((token) => token + 1);
 
   useEffect(() => {
     const secureSelector = "[data-secure-content='true']";
@@ -198,30 +203,41 @@ export default function CourseDetailPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    const secureSelector = "[data-secure-content='true']";
     const blockedCtrlKeys = new Set(["s", "p", "u", "c", "x", "i", "j", "k"]);
 
+    const elementWithinSecure = (node: Node | null): boolean => {
+      if (!node) return false;
+      if (node instanceof Element) {
+        return Boolean(node.closest(secureSelector));
+      }
+      if (node instanceof Text) {
+        return elementWithinSecure(node.parentElement);
+      }
+      return false;
+    };
+
     const isWithinSecureScope = (event?: Event) => {
-      const root = securePageRef.current;
-      if (!root) return false;
-
-      const active = document.activeElement;
-      if (active && root.contains(active)) return true;
-
-      if (active === document.body) return true;
-
-      const selection = window.getSelection();
-      const anchorNode = selection?.anchorNode;
-      const anchorElement =
-        anchorNode instanceof Element ? anchorNode : anchorNode?.parentElement || null;
-      if (anchorElement && root.contains(anchorElement)) return true;
-
-      if (!event) return false;
-      if (typeof event.composedPath === "function") {
-        return event.composedPath().includes(root);
+      if (event) {
+        if (typeof event.composedPath === "function") {
+          const path = event.composedPath();
+          if (path.some((item) => item instanceof Element && item.matches?.(secureSelector))) {
+            return true;
+          }
+        }
+        const target = event.target as Node | null;
+        if (elementWithinSecure(target)) return true;
       }
 
-      const target = event.target as Node | null;
-      return Boolean(target && root.contains(target));
+      const active = document.activeElement;
+      if (elementWithinSecure(active)) return true;
+
+      const selection = window.getSelection();
+      if (selection?.anchorNode && elementWithinSecure(selection.anchorNode)) {
+        return true;
+      }
+
+      return false;
     };
 
     const blockContextMenu = (event: MouseEvent) => {
@@ -231,7 +247,7 @@ export default function CourseDetailPage() {
     };
 
     const blockKeyDown = (event: KeyboardEvent) => {
-      if (!isWithinSecureScope()) return;
+      if (!isWithinSecureScope(event)) return;
 
       const ctrlOrMeta = event.ctrlKey || event.metaKey;
       const key = event.key.toLowerCase();
@@ -357,6 +373,7 @@ export default function CourseDetailPage() {
     const fetchSecuredCourse = async () => {
       setIsLoading(true);
       setNotFound(false);
+      setFetchError(null);
 
       try {
         const token = await user.getIdToken();
@@ -373,6 +390,7 @@ export default function CourseDetailPage() {
           setCourse(null);
           setChapters([]);
           setCompletedIds(new Set());
+          setFetchError(null);
           setIsLoading(false);
           return;
         }
@@ -383,6 +401,7 @@ export default function CourseDetailPage() {
           setHasAccess(true);
           setChapters([]);
           setCompletedIds(new Set());
+          setFetchError(null);
           setIsLoading(false);
           return;
         }
@@ -414,6 +433,8 @@ export default function CourseDetailPage() {
           setChapters([]);
           setCompletedIds(new Set());
           setHasAccess(true);
+          setNotFound(false);
+          setFetchError(message || "Gagal memuat data kursus.");
         }
       } finally {
         if (!cancelled) {
@@ -427,16 +448,52 @@ export default function CourseDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [id, user]);
+  }, [id, user, reloadToken]);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div
-          aria-label="Memuat"
-          className="animate-spin rounded-full h-12 w-12 border-2 border-muted-foreground/30 border-t-foreground"
-        />
-      </div>
+      <Layout pageTitle="Memuat Kelas">
+        <div className="space-y-6 max-w-full mx-auto">
+          <div className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-24 w-full rounded-lg" />
+          </div>
+          <div className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
+            <Skeleton className="h-6 w-40" />
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="space-y-3 rounded-lg border border-dashed border-border/60 p-4">
+                  <Skeleton className="h-5 w-2/3" />
+                  <Skeleton className="h-3 w-1/2" />
+                  <Skeleton className="h-32 w-full rounded-md" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <Layout pageTitle="Gagal Memuat Kelas">
+        <div className="mx-auto max-w-2xl rounded-lg border bg-card p-8 text-center shadow-sm space-y-4">
+          <h2 className="text-xl font-semibold text-foreground">Tidak bisa memuat materi</h2>
+          <p className="text-sm text-muted-foreground">
+            {fetchError || "Terjadi kesalahan saat mengambil data. Coba beberapa saat lagi."}
+          </p>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <Button variant="outline" onClick={handleRetry}>
+              Coba Lagi
+            </Button>
+            <Link href="/pages/courses" className="text-sm text-blue-600 underline">
+              Kembali ke daftar kelas
+            </Link>
+          </div>
+        </div>
+      </Layout>
     );
   }
 
@@ -503,55 +560,68 @@ export default function CourseDetailPage() {
             </p>
           ) : (
             <Accordion type="single" collapsible className="w-full">
-              {chapters.map((chapter, index) => (
-                <AccordionItem 
-                  key={chapter.id} 
-                  value={`item-${index}`}
-                  className="border-b border-border"
-                >
-                  <AccordionTrigger className="text-left hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">#{index + 1}</span>
-                      <span className="font-medium">{chapter.title}</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="space-y-4 pt-4">
-                    {renderSecureChapterContent(chapter, user?.email ?? user?.displayName ?? "Pengguna terdaftar")}
+              {chapters.map((chapter, index) => {
+                const isCompleted = completedIds.has(chapter.id);
+                const statusLabel = isCompleted ? "Selesai" : "Belum selesai";
+                return (
+                  <AccordionItem
+                    key={chapter.id}
+                    value={`item-${index}`}
+                    className="border-b border-border"
+                  >
+                    <AccordionTrigger className="flex items-center justify-between gap-4 text-left hover:no-underline">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">#{index + 1}</span>
+                        <span className="font-medium">{chapter.title}</span>
+                      </div>
+                      <span
+                        className={`text-xs font-medium ${
+                          isCompleted ? "text-emerald-500" : "text-muted-foreground"
+                        }`}
+                      >
+                        {statusLabel}
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-4 pt-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-dashed border-border/60 bg-muted/40 px-3 py-2">
+                        <label className="flex items-center gap-2 text-sm font-medium text-foreground select-none">
+                          <input
+                            type="checkbox"
+                            aria-label={`Tandai selesai: ${chapter.title}`}
+                            checked={isCompleted}
+                            onChange={() => handleToggleChapterCompleted(chapter.id)}
+                            className="h-4 w-4 rounded border-border text-foreground focus:ring-ring"
+                          />
+                          Tandai selesai
+                        </label>
+                        <span className="text-xs text-muted-foreground">
+                          {isCompleted ? "Bab ini sudah kamu tandai selesai." : "Centang setelah materi ini kamu kuasai."}
+                        </span>
+                      </div>
 
-                    {chapter.description && (
-                      <p className="text-sm text-muted-foreground">
-                        {chapter.description}
-                      </p>
-                    )}
+                      {renderSecureChapterContent(chapter, user?.email ?? user?.displayName ?? "Pengguna terdaftar")}
 
-                    {chapter.text && (
-                      <p className="text-sm md:text-base text-foreground whitespace-pre-line">
-                        {chapter.text}
-                      </p>
-                    )}
+                      {chapter.description && (
+                        <p className="text-sm text-muted-foreground">
+                          {chapter.description}
+                        </p>
+                      )}
 
-                    {!chapter.videoId && !chapter.image && !chapter.pdfUrl && !chapter.text && (
-                      <p className="text-sm text-muted-foreground italic">
-                        Konten belum tersedia.
-                      </p>
-                    )}
+                      {chapter.text && (
+                        <p className="text-sm md:text-base text-foreground whitespace-pre-line">
+                          {chapter.text}
+                        </p>
+                      )}
 
-                    {/* Completion toggle inside content */}
-                    <div className="mt-2 pt-3 border-t border-border flex items-center justify-end gap-2">
-                      <label className="flex items-center gap-2 text-sm text-muted-foreground select-none">
-                        <input
-                          type="checkbox"
-                          aria-label={`Tandai selesai: ${chapter.title}`}
-                          checked={completedIds.has(chapter.id)}
-                          onChange={() => handleToggleChapterCompleted(chapter.id)}
-                          className="h-4 w-4 rounded border-border text-foreground focus:ring-ring"
-                        />
-                        Tandai selesai
-                      </label>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
+                      {!chapter.videoId && !chapter.image && !chapter.pdfUrl && !chapter.text && (
+                        <p className="text-sm text-muted-foreground italic">
+                          Konten belum tersedia.
+                        </p>
+                      )}
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
             </Accordion>
           )}
         </div>
