@@ -38,6 +38,7 @@ type ProfileData = {
   subscriptionActive?: boolean;
   subscriberUntil?: unknown;
   surveyCompleted?: boolean;
+  teachingSubject?: string;
 };
 
 export default function Layout({ children, pageTitle = "Dashboard" }: LayoutProps) {

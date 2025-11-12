@@ -21,13 +21,47 @@ import { toast } from "sonner";
 import { doc, setDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { Loader2, UploadCloud, ShieldCheck } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type ProfileForm = {
   name: string;
   username: string;
   level: string;
   description: string;
+  teachingSubject: string;
 };
+
+const SUBJECT_OPTIONS = [
+  "Matematika",
+  "Bahasa Indonesia",
+  "Bahasa Inggris",
+  "Ilmu Pengetahuan Alam",
+  "Fisika",
+  "Kimia",
+  "Biologi",
+  "Ilmu Pengetahuan Sosial",
+  "Sejarah",
+  "Geografi",
+  "Ekonomi",
+  "Sosiologi",
+  "Teknologi Informasi",
+  "Pemrograman",
+  "Rekayasa Perangkat Lunak",
+  "TKJ",
+  "Desain Grafis",
+  "DKV (Desain Komunikasi Visual)",
+  "Bahasa Jepang",
+  "Bahasa Arab",
+  "Agama",
+  "Kewirausahaan",
+  "PKN",
+] as const;
 
 export default function AdminSettingsPage() {
   const { user, profile, profileLoading } = useAdminProfile();
@@ -36,6 +70,7 @@ export default function AdminSettingsPage() {
     username: "",
     level: "",
     description: "",
+    teachingSubject: "",
   });
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -57,6 +92,12 @@ export default function AdminSettingsPage() {
           "",
         level: (typeof profile.level === "string" && profile.level) || "",
         description: (typeof profile.description === "string" && profile.description) || "",
+        teachingSubject:
+          (typeof profile.teachingSubject === "string" && profile.teachingSubject) ||
+          (typeof (profile as Record<string, unknown>).subject === "string" && (profile as Record<string, string>).subject) ||
+          (typeof (profile as Record<string, unknown>).mataPelajaran === "string" &&
+            (profile as Record<string, string>).mataPelajaran) ||
+          "",
       });
       setPhotoURL(
         (typeof profile.photoURL === "string" && profile.photoURL) || undefined
@@ -131,6 +172,7 @@ export default function AdminSettingsPage() {
         username: form.username,
         level: form.level,
         description: form.description,
+        teachingSubject: form.teachingSubject,
         updatedAt: new Date(),
       };
       if (profile?.role) {
@@ -243,6 +285,11 @@ export default function AdminSettingsPage() {
                 <p className="text-sm text-muted-foreground">
                   {form.description || "Belum ada deskripsi. Ceritakan pengalaman mengajar Anda."}
                 </p>
+                {form.teachingSubject ? (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Mengajar: {form.teachingSubject}
+                  </p>
+                ) : null}
               </div>
             </CardContent>
           </Card>
@@ -298,6 +345,33 @@ export default function AdminSettingsPage() {
                   />
                   <p className="text-xs text-muted-foreground">
                     Deskripsi ini membantu siswa mengenal latar belakang Anda.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="settings-subject">Mata Pelajaran / Keahlian</Label>
+                  <Select
+                    value={form.teachingSubject || "none"}
+                    onValueChange={(value) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        teachingSubject: value === "none" ? "" : value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger id="settings-subject">
+                      <SelectValue placeholder="Pilih mata pelajaran" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Belum diatur</SelectItem>
+                      {SUBJECT_OPTIONS.map((subject) => (
+                        <SelectItem key={subject} value={subject}>
+                          {subject}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Data ini digunakan untuk menampilkan nama pengampu pada tugas & kuis.
                   </p>
                 </div>
                 <div className="flex justify-end">

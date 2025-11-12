@@ -42,6 +42,7 @@ type Assignment = {
   questions?: QuizQuestion[];
   createdBy?: string;
   createdByName?: string;
+  createdBySubject?: string;
 };
 
 const genId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -341,6 +342,18 @@ export default function AdminAssignmentsPage() {
       fallback
     );
   }, [profile, user?.email]);
+  const profileSubject = useMemo(() => {
+    if (!profile) return "";
+    const subjectCandidates = [
+      typeof profile.teachingSubject === "string" ? profile.teachingSubject : null,
+      typeof profile.subject === "string" ? profile.subject : null,
+      typeof (profile as Record<string, unknown>).mataPelajaran === "string"
+        ? ((profile as Record<string, string>).mataPelajaran as string)
+        : null,
+    ];
+    const found = subjectCandidates.find((value) => value && value.trim().length > 0);
+    return found ? found.trim() : "";
+  }, [profile]);
   const [list, setList] = useState<Assignment[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -481,6 +494,7 @@ export default function AdminAssignmentsPage() {
         createdAt: serverTimestamp(),
         createdBy: user.uid,
         createdByName: profileName || title,
+        createdBySubject: profileSubject || "",
       });
       toast.success("Berhasil membuat tugas/kuis");
       setTitle("");
@@ -526,6 +540,7 @@ export default function AdminAssignmentsPage() {
         autoGrading: editType === "quiz" ? editAutoGrading : false,
         questions: questionPayload,
         updatedAt: serverTimestamp(),
+        createdBySubject: editing.createdBySubject ?? profileSubject ?? "",
       });
       toast.success("Perubahan disimpan");
       setEditing(null);
