@@ -20,6 +20,8 @@ type AssignmentDoc = {
   points?: number;
   type?: "task" | "quiz";
   questions?: QuizQuestionDoc[];
+  createdByName?: string;
+  createdBySubject?: string;
 };
 
 type SubmissionDoc = {

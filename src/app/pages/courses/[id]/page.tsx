@@ -562,7 +562,6 @@ export default function CourseDetailPage() {
             <Accordion type="single" collapsible className="w-full">
               {chapters.map((chapter, index) => {
                 const isCompleted = completedIds.has(chapter.id);
-                const statusLabel = isCompleted ? "Selesai" : "Belum selesai";
                 return (
                   <AccordionItem
                     key={chapter.id}
@@ -570,35 +569,27 @@ export default function CourseDetailPage() {
                     className="border-b border-border"
                   >
                     <AccordionTrigger className="flex items-center justify-between gap-4 text-left hover:no-underline">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">#{index + 1}</span>
-                        <span className="font-medium">{chapter.title}</span>
-                      </div>
-                      <span
-                        className={`text-xs font-medium ${
-                          isCompleted ? "text-emerald-500" : "text-muted-foreground"
-                        }`}
-                      >
-                        {statusLabel}
-                      </span>
-                    </AccordionTrigger>
-                    <AccordionContent className="space-y-4 pt-4">
-                      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-dashed border-border/60 bg-muted/40 px-3 py-2">
-                        <label className="flex items-center gap-2 text-sm font-medium text-foreground select-none">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">#{index + 1}</span>
+                          <span className="font-medium">{chapter.title}</span>
+                        </div>
+                        <label
+                          onClick={(event) => event.stopPropagation()}
+                          className="flex items-center gap-2 rounded-full border border-border/70 bg-background/90 px-3 py-1 text-xs font-medium text-foreground shadow-sm"
+                        >
                           <input
                             type="checkbox"
                             aria-label={`Tandai selesai: ${chapter.title}`}
                             checked={isCompleted}
                             onChange={() => handleToggleChapterCompleted(chapter.id)}
-                            className="h-4 w-4 rounded border-border text-foreground focus:ring-ring"
+                            className="h-3.5 w-3.5 rounded border-border text-foreground focus:ring-ring"
                           />
-                          Tandai selesai
+                          <span>{isCompleted ? "Selesai" : "Belum selesai"}</span>
                         </label>
-                        <span className="text-xs text-muted-foreground">
-                          {isCompleted ? "Bab ini sudah kamu tandai selesai." : "Centang setelah materi ini kamu kuasai."}
-                        </span>
                       </div>
-
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-4 pt-4">
                       {renderSecureChapterContent(chapter, user?.email ?? user?.displayName ?? "Pengguna terdaftar")}
 
                       {chapter.description && (
