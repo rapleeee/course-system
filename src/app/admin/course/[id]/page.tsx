@@ -8,6 +8,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import AddChapterModal from "@/components/courses/AddChapterModal";
 import ChapterList from "@/components/courses/ChapterList";
+import type { QuizQuestion } from "@/types/assignments";
 
 type Course = {
   title: string;
@@ -25,11 +26,13 @@ export type Chapter = {
   description?: string;
   shortDesc?: string;
   text?: string;
-  type: "video" | "module" | "pdf";
+  type: "video" | "module" | "pdf" | "quiz";
   videoId?: string;
   pdfUrl?: string;
   image?: string;
   createdAt: Date | number;
+   quizQuestions?: QuizQuestion[];
+   quizMinScore?: number;
 };
 
 export default function CourseDetailPage() {

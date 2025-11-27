@@ -39,7 +39,7 @@ type NewChapter = {
   title: string;
   description: string;
   text?: string;
-  type: "video" | "module" | "pdf";
+  type: "video" | "module" | "pdf" | "quiz";
   createdAt: FieldValue;
   videoId?: string; // Changed from videoUrl to videoId
   image?: string;
@@ -52,7 +52,7 @@ export default function AddChapterModal({ courseId, onChapterAdded }: Props) {
   const [title, setTitle] = useState("");
   const [shortDesc, setShortDesc] = useState("");
   const [longDesc, setLongDesc] = useState("");
-  const [type, setType] = useState<"video" | "module" | "pdf">("video");
+  const [type, setType] = useState<"video" | "module" | "pdf" | "quiz">("video");
   const [file, setFile] = useState<File | null>(null);
   const [youtubeUrl, setYoutubeUrl] = useState("");
 
@@ -74,9 +74,11 @@ export default function AddChapterModal({ courseId, onChapterAdded }: Props) {
           MySwal.fire("Error", "Link YouTube tidak valid.", "error");
           return;
         }
-      } else if (!file && (type === "module" || type === "pdf")) {
-        MySwal.fire("Error", "File wajib diupload.", "error");
-        return;
+      } else if (type === "module" || type === "pdf") {
+        if (!file) {
+          MySwal.fire("Error", "File wajib diupload.", "error");
+          return;
+        }
       }
 
       setLoading(true);
@@ -165,11 +167,18 @@ export default function AddChapterModal({ courseId, onChapterAdded }: Props) {
             <select
               className="w-full border px-3 py-2 rounded"
               value={type}
-              onChange={(e) => setType(e.target.value as "video" | "module" | "pdf")}
+              onChange={(e) =>
+                setType(
+                  e.target.value === "module" || e.target.value === "pdf" || e.target.value === "quiz"
+                    ? (e.target.value as "module" | "pdf" | "quiz")
+                    : "video"
+                )
+              }
             >
               <option value="video">Video YouTube</option>
               <option value="module">Gambar</option>
               <option value="pdf">PDF</option>
+              <option value="quiz">Kuis</option>
             </select>
           </div>
 
@@ -188,12 +197,17 @@ export default function AddChapterModal({ courseId, onChapterAdded }: Props) {
                 - https://youtu.be/xxxxx
               </p>
             </div>
-          ) : (
+          ) : type === "module" || type === "pdf" ? (
             <Input 
               type="file" 
               onChange={(e) => setFile(e.target.files?.[0] || null)}
               accept={type === "pdf" ? ".pdf" : "image/*"}
             />
+          ) : (
+            <p className="text-xs text-gray-500">
+              Chapter ini bertipe kuis. Setelah disimpan, buka menu Kuis pada chapter ini untuk
+              menambahkan soal.
+            </p>
           )}
         </div>
 

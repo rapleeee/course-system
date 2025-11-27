@@ -3,11 +3,12 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Trash2, Pencil, ChevronDown, ChevronUp } from "lucide-react";
+import { Trash2, Pencil, ChevronDown, ChevronUp, ListChecks } from "lucide-react";
 import { doc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import EditChapterModal from "./EditChapterModal";
 import { Chapter } from "./types";
+import { ChapterQuizModal } from "./ChapterQuizModal";
 import YouTube from 'react-youtube';
 import {
     Dialog,
@@ -26,6 +27,7 @@ type Props = {
 
 export default function ChapterList({ chapters, courseId, onChapterUpdated }: Props) {
     const [editingChapter, setEditingChapter] = useState<Chapter | null>(null);
+    const [quizChapter, setQuizChapter] = useState<Chapter | null>(null);
     const [openIndex, setOpenIndex] = useState<number | null>(null);
     const [confirmDelete, setConfirmDelete] = useState<Chapter | null>(null);
 
@@ -48,6 +50,14 @@ export default function ChapterList({ chapters, courseId, onChapterUpdated }: Pr
 
     const renderChapterContent = (chapter: Chapter) => {
         switch (chapter.type) {
+            case "quiz":
+                return (
+                    <div className="p-4 bg-emerald-50 text-emerald-800 rounded-lg text-sm">
+                        Chapter ini adalah <span className="font-semibold">kuis</span>. Konten utamanya
+                        berupa pertanyaan yang dikerjakan siswa di halaman kursus.
+                    </div>
+                );
+
             case "video":
                 return chapter.videoId ? (
                     <div className="aspect-video w-full rounded-lg overflow-hidden">
@@ -120,6 +130,13 @@ export default function ChapterList({ chapters, courseId, onChapterUpdated }: Pr
                         <div className="flex items-center space-x-2">
                             <span className="text-sm text-gray-500">#{index + 1}</span>
                             <span className="font-medium">{chapter.title}</span>
+                            {chapter.type === "quiz" && (
+                                <span className="ml-2 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 border border-emerald-200">
+                                    {Array.isArray(chapter.quizQuestions) && chapter.quizQuestions.length > 0
+                                        ? `Kuis • ${chapter.quizQuestions.length} soal`
+                                        : "Kuis • belum ada soal"}
+                                </span>
+                            )}
                         </div>
                         {openIndex === index ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                     </button>
@@ -149,6 +166,16 @@ export default function ChapterList({ chapters, courseId, onChapterUpdated }: Pr
                                     <Pencil className="w-4 h-4 mr-1" />
                                     Edit
                                 </Button>
+                                {chapter.type === "quiz" && (
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => setQuizChapter(chapter)}
+                                    >
+                                        <ListChecks className="w-4 h-4 mr-1" />
+                                        Kuis
+                                    </Button>
+                                )}
                                 <Button
                                     size="sm"
                                     variant="destructive"
@@ -195,6 +222,20 @@ export default function ChapterList({ chapters, courseId, onChapterUpdated }: Pr
                     courseId={courseId}
                     onChapterUpdated={() => {
                         setEditingChapter(null);
+                        onChapterUpdated?.();
+                    }}
+                />
+            )}
+            {quizChapter && (
+                <ChapterQuizModal
+                    open={!!quizChapter}
+                    onOpenChange={(open) => {
+                        if (!open) setQuizChapter(null);
+                    }}
+                    chapter={quizChapter}
+                    courseId={courseId}
+                    onQuizUpdated={() => {
+                        setQuizChapter(null);
                         onChapterUpdated?.();
                     }}
                 />
