@@ -44,14 +44,16 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'Mentora SMK Pesat',
-    description: 'Platform E-Learning Resmi Mentora SMK Pesat',
+    description:
+      'Belajar coding, desain, dan IT di Mentora SMK Pesat dengan sistem modular dan gamifikasi. Akses materi, tugas, dan sertifikat resmi sekolah.',
     url: 'https://mentora.smkpesat.sch.id',
     siteName: 'Mentora SMK Pesat',
     images: [
       {
-        url: '/logo.png',
-        width: 800,
-        height: 600,
+        url: '/logos/mentora.png',
+        width: 1200,
+        height: 630,
+        alt: 'Mentora SMK Pesat',
       },
     ],
     locale: 'id_ID',
@@ -60,12 +62,17 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Mentora SMK Pesat',
-    description: 'Platform E-Learning Resmi Mentora SMK Pesat',
-    images: ['/logo.png'],
+    description:
+      'Belajar coding, desain, dan IT di Mentora SMK Pesat dengan sistem modular dan gamifikasi.',
+    images: ['/logos/mentora.png'],
     creator: '@smkpesat',
   },
   icons: {
-    icon: '/favicon.ico',
+    icon: [
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon.ico' },
+    ],
     apple: '/apple-touch-icon.png',
     shortcut: '/favicon-32x32.png',
     other: [

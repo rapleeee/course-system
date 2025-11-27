@@ -2,7 +2,7 @@
 
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { Card } from "@/components/ui/card";
-import { Users, BookOpen, CalendarCheck, Award, PlusCircle, UserPlus, FilePlus, Megaphone, CreditCard, Crown, Activity } from "lucide-react";
+import { Users, Award, PlusCircle, UserPlus, FilePlus, Megaphone, CreditCard, Crown, Activity } from "lucide-react";
 import Link from "next/link";
 import clsx from "clsx";
 import { useEffect, useState } from "react";
@@ -18,13 +18,6 @@ import {
   Timestamp,
   where,
 } from "firebase/firestore";
-
-type StatItem = {
-  title: string;
-  icon: React.ElementType; // ganti dari `any`
-  color: string;
-  value: number;
-};
 
 type ActivityLog = {
   id: string;
@@ -312,7 +305,9 @@ const mapPaymentDocument = (doc: { id: string; data: () => Record<string, unknow
 };
 
 export default function AdminDashboardPage() {
-  const [stats, setStats] = useState<StatItem[]>([]);
+  const [userCount, setUserCount] = useState(0);
+  const [courseCount, setCourseCount] = useState(0);
+  const [eventCount, setEventCount] = useState(0);
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [activitiesLoading, setActivitiesLoading] = useState(true);
   const [activeSubs, setActiveSubs] = useState<number>(0);
@@ -323,60 +318,72 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const userSnap = await getCountFromServer(collection(db, "users"));
-      const courseSnap = await getCountFromServer(collection(db, "courses"));
-      const eventSnap = await getCountFromServer(collection(db, "events"));
-      const leaderboardSnap = await getCountFromServer(collection(db, "users")); // diasumsikan totalScore diambil dari users
+      try {
+        const [userSnap, courseSnap, eventSnap, assignmentSnap] = await Promise.all([
+          getCountFromServer(collection(db, "users")),
+          getCountFromServer(collection(db, "courses")),
+          getCountFromServer(collection(db, "events")),
+          getCountFromServer(collection(db, "assignments")),
+        ]);
 
-      const statData: StatItem[] = [
-        {
-          title: "Total User",
-          icon: Users,
-          color: "bg-blue-100 text-blue-600",
-          value: userSnap.data().count,
-        },
-        {
-          title: "Total Course",
-          icon: BookOpen,
-          color: "bg-green-100 text-green-600",
-          value: courseSnap.data().count,
-        },
-        {
-          title: "Total Event",
-          icon: CalendarCheck,
-          color: "bg-yellow-100 text-yellow-600",
-          value: eventSnap.data().count,
-        },
-        {
-          title: "Leaderboard Entry",
-          icon: Award,
-          color: "bg-purple-100 text-purple-600",
-          value: leaderboardSnap.data().count,
-        },
-      ];
-
-      setStats(statData);
+        setUserCount(userSnap.data().count);
+        setCourseCount(courseSnap.data().count);
+        setEventCount(eventSnap.data().count);
+        // assignments count tidak wajib ditampilkan terpisah saat ini, tapi bisa dipakai nanti jika perlu
+        if (assignmentSnap.data().count > 0) {
+          // noop, hanya memastikan query tidak dioptimasi keluar
+        }
+      } catch (error) {
+        console.error("Failed to fetch dashboard counters:", error);
+      }
     };
 
     const fetchSubscriptions = async () => {
-      const now = Timestamp.now();
-      const activeQ = query(
-        collection(db, "subscriptions"),
-        where("status", "==", "active"),
-        where("currentPeriodEnd", ">=", now)
-      );
-      const activeCount = await getCountFromServer(activeQ);
-      setActiveSubs(activeCount.data().count);
+      try {
+        const now = Timestamp.now();
+        const nowMs = now.toMillis();
+        const soonMs = nowMs + 7 * 24 * 60 * 60 * 1000;
 
-      const soon = Timestamp.fromMillis(now.toMillis() + 7 * 24 * 60 * 60 * 1000);
-      const expiringQ = query(
-        collection(db, "subscriptions"),
-        where("status", "==", "active"),
-        where("currentPeriodEnd", ">=", now),
-        where("currentPeriodEnd", "<=", soon)
-      );
-      const expiringCount = await getCountFromServer(expiringQ);
-      setExpiringSubs(expiringCount.data().count);
+        const activeSnap = await getDocs(
+          query(collection(db, "subscriptions"), where("status", "==", "active"))
+        );
+
+        let active = 0;
+        let expiring = 0;
+
+        activeSnap.forEach((docSnap) => {
+          const data = docSnap.data() as { currentPeriodEnd?: Timestamp | { seconds?: number; nanoseconds?: number } };
+          const rawEnd = data.currentPeriodEnd;
+          let endMs: number | null = null;
+
+          if (rawEnd instanceof Timestamp) {
+            endMs = rawEnd.toMillis();
+          } else if (
+            rawEnd &&
+            typeof rawEnd === "object" &&
+            "seconds" in rawEnd &&
+            typeof (rawEnd as { seconds: unknown }).seconds === "number"
+          ) {
+            const { seconds, nanoseconds } = rawEnd as { seconds: number; nanoseconds?: number };
+            endMs = seconds * 1000 + Math.floor((nanoseconds ?? 0) / 1_000_000);
+          }
+
+          if (endMs === null) return;
+          if (endMs >= nowMs) {
+            active += 1;
+            if (endMs <= soonMs) {
+              expiring += 1;
+            }
+          }
+        });
+
+        setActiveSubs(active);
+        setExpiringSubs(expiring);
+      } catch (error) {
+        console.error("Failed to fetch subscription summary:", error);
+        setActiveSubs(0);
+        setExpiringSubs(0);
+      }
     };
 
     const fetchRecentCourses = async () => {
@@ -469,57 +476,61 @@ export default function AdminDashboardPage() {
 
   return (
     <AdminLayout pageTitle="Dashboard Admin Mentora">
+      {/* Ringkasan singkat */}
       <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-        {stats.map((item, index) => (
-          <Card key={index} className="p-4 border bg-card shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className={clsx("rounded-full p-3", item.color)}>
-                <item.icon className="w-5 h-5" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-sm text-muted-foreground">{item.title}</div>
-                <div className="text-2xl font-semibold text-foreground">{fmt.format(item.value)}</div>
-              </div>
-            </div>
-          </Card>
-        ))}
+        <Card className="p-4 border bg-card shadow-sm">
+          <p className="text-xs font-medium text-muted-foreground">Total User</p>
+          <p className="mt-1 text-2xl font-semibold text-foreground">{fmt.format(userCount)}</p>
+        </Card>
+        <Card className="p-4 border bg-card shadow-sm">
+          <p className="text-xs font-medium text-muted-foreground">Total Course</p>
+          <p className="mt-1 text-2xl font-semibold text-foreground">{fmt.format(courseCount)}</p>
+        </Card>
+        <Card className="p-4 border bg-card shadow-sm">
+          <p className="text-xs font-medium text-muted-foreground">Total Event</p>
+          <p className="mt-1 text-2xl font-semibold text-foreground">{fmt.format(eventCount)}</p>
+        </Card>
+        <Card className="p-4 border bg-card shadow-sm">
+          <p className="text-xs font-medium text-muted-foreground">Pelanggan Aktif</p>
+          <p className="mt-1 text-2xl font-semibold text-foreground">{fmt.format(activeSubs)}</p>
+        </Card>
       </section>
 
-      {/* Subscription Overview */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Card className="p-4 border bg-card shadow-sm flex items-center gap-3">
-          <div className="p-3 rounded-full bg-amber-100 text-amber-700"><Crown className="w-5 h-5" /></div>
-          <div>
-            <div className="text-sm text-muted-foreground">Pelanggan Aktif</div>
+      {/* Ringkasan langganan & transaksi */}
+      <section className="mb-8">
+        <Card className="p-4 border bg-card shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-foreground">Ringkasan Langganan</h2>
           </div>
-            <div className="text-2xl font-semibold">{fmt.format(activeSubs)}</div>
-        </Card>
-        <Card className="p-4 border bg-card shadow-sm flex items-center gap-3">
-          <div className="p-3 rounded-full bg-cyan-100 text-cyan-700"><Activity className="w-5 h-5" /></div>
-          <div>
-            <div className="text-sm text-muted-foreground">Akan Berakhir ≤ 7 hari</div>
-          </div>
-            <div className="text-2xl font-semibold">{fmt.format(expiringSubs)}</div>
-        </Card>
-        <Card className="p-4 border bg-card shadow-sm flex items-center gap-3">
-          <div className="p-3 rounded-full bg-emerald-100 text-emerald-700"><CreditCard className="w-5 h-5" /></div>
-          <div className="flex-1">
-            <div className="text-sm text-muted-foreground">Transaksi Terakhir</div>
-            <div className="text-xs text-muted-foreground">
-              {paymentsLoading
-                ? "Memuat transaksi..."
-                : latestPaymentTime
-                ? `Terakhir ${latestPaymentTime}`
-                : "Belum ada transaksi"}
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Pelanggan aktif</span>
+              <span className="font-medium text-foreground">{fmt.format(activeSubs)}</span>
             </div>
-          </div>
-          <div className="text-right">
-            <div className="text-2xl font-semibold">
-              {paymentsLoading ? "…" : latestAmountLabel}
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Berakhir ≤ 7 hari</span>
+              <span className="font-medium text-foreground">{fmt.format(expiringSubs)}</span>
             </div>
-            {latestPaymentTimeFull ? (
-              <div className="text-[11px] text-muted-foreground">{latestPaymentTimeFull}</div>
-            ) : null}
+            <div className="flex items-center justify-between pt-2 border-t border-border/60">
+              <div className="flex flex-col">
+                <span className="text-muted-foreground">Transaksi terakhir</span>
+                <span className="text-xs text-muted-foreground">
+                  {paymentsLoading
+                    ? "Memuat transaksi..."
+                    : latestPaymentTime
+                    ? `Terakhir ${latestPaymentTime}`
+                    : "Belum ada transaksi"}
+                </span>
+                {!paymentsLoading && latestPaymentTimeFull ? (
+                  <span className="text-[11px] text-muted-foreground">
+                    {latestPaymentTimeFull}
+                  </span>
+                ) : null}
+              </div>
+              <span className="text-base font-semibold text-foreground">
+                {paymentsLoading ? "…" : latestAmountLabel}
+              </span>
+            </div>
           </div>
         </Card>
       </section>
@@ -698,11 +709,13 @@ export default function AdminDashboardPage() {
           <h2 className="text-lg font-semibold">Aksi Cepat</h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           {[
+            { label: "Kelola User", href: "/admin/users", icon: Users, color: "text-slate-700", ring: "ring-slate-300" },
             { label: "Tambah Course", href: "/admin/addcourses", icon: PlusCircle, color: "text-emerald-700", ring: "ring-emerald-300" },
             { label: "Tambah Event", href: "/admin/events", icon: PlusCircle, color: "text-blue-700", ring: "ring-blue-300" },
             { label: "Lihat Sertifikat", href: "/admin/certificates", icon: Award, color: "text-purple-700", ring: "ring-purple-300" },
+            { label: "Permintaan Langganan", href: "/admin/subscriptions/requests", icon: CreditCard, color: "text-amber-700", ring: "ring-amber-300" },
           ].map(({ label, href, icon: Icon, color, ring }, idx) => (
             <Link href={href} key={idx}>
               <Card className={clsx("p-4 border bg-card shadow-sm hover:shadow transition-all flex items-center gap-3", "hover:ring-2", ring)}>
