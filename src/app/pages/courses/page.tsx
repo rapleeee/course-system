@@ -606,7 +606,7 @@ export default function CoursesPage() {
                       <p>Nominal yang perlu dibayar mengikuti harga normal di atas.</p>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      Setelah men-transfer, ajukan bukti pembayaran. Admin akan menyetujui sebelum akses diberikan.
+                      Setelah men-transfer, ajukan bukti pembayaran. Kamu juga bisa memasukkan kode unik diskon di halaman checkout manual.
                     </p>
                   </div>
                 )}

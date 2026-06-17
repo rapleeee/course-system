@@ -6,6 +6,7 @@ Mentora Course System is the official learning platform for Mentora SMK Pesat. I
 - Student dashboard with course progress, streaks, announcements, and quick recommendations sourced from Firestore.
 - Course catalog, chapter management, and assignment workflows, including DOCX template import and rubric-based review.
 - Subscription and payment flows with Midtrans Snap and manual bank transfer instructions.
+- Discount code support for manual course purchases and manual subscription requests.
 - Certificate generation pipeline that renders signed PDFs, stores them in Firebase Storage, and notifies students automatically.
 - MentorAI chat widget backed by Together API / HuggingFace for warm guidance and a WhatsApp escalation path.
 - Community tooling: event calendar, forum, leaderboard, surveys, and gamified streak tracking.
@@ -129,6 +130,23 @@ Additional Firebase admin variables:
 - When testing locally, set `MIDTRANS_IS_PRODUCTION=false` and leverage the sandbox Snap URL (`https://app.sandbox.midtrans.com/snap/snap.js`).
 - `NEXT_PUBLIC_BASE_URL` ensures asynchronous payment callbacks build absolute URLs; override it when running behind a reverse proxy.
 - Manual transfer instructions fall back to Mentora-branded placeholder values; override them for production.
+
+## Discount Code Setup
+- Create a Firestore collection named `discount_codes`.
+- Use the discount code itself (uppercase, no spaces) as the document ID, for example `HEMAT10`.
+- Supported fields:
+  - `active` (`boolean`, default `true`)
+  - `title` (`string`, optional)
+  - `appliesTo` (`"all" | "course" | "subscription"`, default `"all"`)
+  - `targetCourseIds` (`string[]`, required when `appliesTo` is `course`)
+  - `discountType` (`"fixed" | "percentage"`, default `"fixed"`)
+  - `discountValue` (`number`, required)
+  - `minAmount` (`number`, optional)
+  - `maxDiscount` (`number`, optional, only used for `percentage`)
+  - `startsAt` and `endsAt` (`Timestamp`, optional)
+- Applied code metadata is stored in:
+  - `course_purchase_requests` (manual paid courses)
+  - `subscription_requests` (manual subscription requests)
 
 ## MentorAI Configuration
 - Provide a valid `TOGETHER_API_KEY` to enable `/api/consult` and `/api/mentorai` routes.

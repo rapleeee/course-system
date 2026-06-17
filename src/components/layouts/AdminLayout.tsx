@@ -35,6 +35,7 @@ import {
   FilePlus2,
   School2,
   Megaphone,
+  TicketPercent,
 } from "lucide-react";
 
 type SidebarSection = {
@@ -55,6 +56,7 @@ const sidebarMenu: SidebarSection[] = [
       { name: "Manajemen Event", icon: <CalendarCheck size={18} />, href: "/admin/events" },
       { name: "Tugas & Kuis", icon: <Layers size={18} />, href: "/admin/assignments" },
       { name: "Kategori", icon: <Layers size={18} />, href: "/admin/categories" },
+      { name: "Kode Diskon", icon: <TicketPercent size={18} />, href: "/admin/discount-codes" },
       { name: "Pengumuman", icon: <Megaphone size={18} />, href: "/admin/announcements" },
     ],
   },

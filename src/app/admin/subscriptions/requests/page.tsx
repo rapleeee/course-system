@@ -39,6 +39,13 @@ type Req = {
   uid: string;
   userName?: string | null;
   userEmail?: string | null;
+  basePrice?: number;
+  discountApplied?: number;
+  promoCode?: string | null;
+  promoCodeTitle?: string | null;
+  promoDiscountApplied?: number;
+  promoDiscountType?: "fixed" | "percentage" | null;
+  promoDiscountValue?: number | null;
   amount?: number;
   bank?: string;
   accountName?: string;
@@ -275,7 +282,22 @@ export default function SubscriptionRequestsPage() {
                           <span className="text-xs text-muted-foreground">UID: {r.uid}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm">{formatAmount(r.amount)}</TableCell>
+                      <TableCell className="text-sm">
+                        <div className="flex flex-col">
+                          <span>{formatAmount(r.amount)}</span>
+                          {r.basePrice && r.basePrice > (r.amount ?? 0) ? (
+                            <span className="text-[11px] text-muted-foreground">
+                              Harga dasar: {formatAmount(r.basePrice)}
+                            </span>
+                          ) : null}
+                          {r.promoDiscountApplied && r.promoCode ? (
+                            <span className="text-[11px] text-muted-foreground">
+                              Kode {r.promoCode}: -Rp{" "}
+                              {r.promoDiscountApplied.toLocaleString("id-ID")}
+                            </span>
+                          ) : null}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-sm">
                         <div className="flex flex-col">
                           <span>{r.bank || "-"}</span>

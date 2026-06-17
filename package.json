@@ -2,10 +2,13 @@
   "name": "mentora-web",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20 <25"
+  },
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "NODE_OPTIONS=\"--localstorage-file=.node-localstorage ${NODE_OPTIONS:-}\" next dev",
+    "build": "NODE_OPTIONS=\"--localstorage-file=.node-localstorage ${NODE_OPTIONS:-}\" next build",
+    "start": "NODE_OPTIONS=\"--localstorage-file=.node-localstorage ${NODE_OPTIONS:-}\" next start",
     "lint": "next lint",
     "verify:docx-import": "node scripts/verify-docx-import.cjs"
   },

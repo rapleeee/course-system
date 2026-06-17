@@ -197,7 +197,7 @@ export default function AddCoursesPage() {
               required={accessType === "paid"}
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Pengguna dengan langganan aktif akan mendapatkan diskon Rp5.000 secara otomatis.
+              Pengguna dengan langganan aktif mendapat diskon Rp5.000 otomatis. Diskon tambahan dapat diberikan lewat kode unik saat checkout manual.
             </p>
           </div>
         )}

@@ -3,6 +3,7 @@
 import Layout from "@/components/layout";
 import { useAuth } from "@/lib/useAuth";
 import { db, storage } from "@/lib/firebase";
+import { normalizeDiscountCode, validateDiscountCode } from "@/lib/discount-code";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -24,17 +25,45 @@ type CourseLite = {
 
 type RequestStatus = "pending" | "approved" | "rejected" | null;
 
+type PricingState = {
+  base: number;
+  subscriberDiscount: number;
+  promoDiscount: number;
+  discountApplied: number;
+  final: number;
+};
+
+type AppliedPromo = {
+  code: string;
+  title: string | null;
+  discountType: "fixed" | "percentage";
+  discountValue: number;
+  discountAmount: number;
+};
+
+const buildPricing = (base: number, subscriberDiscount: number, promoDiscount = 0): PricingState => {
+  const safeBase = Math.max(0, Math.floor(base));
+  const safeSubscriber = Math.min(safeBase, Math.max(0, Math.floor(subscriberDiscount)));
+  const remainingAfterSubscriber = Math.max(0, safeBase - safeSubscriber);
+  const safePromo = Math.min(remainingAfterSubscriber, Math.max(0, Math.floor(promoDiscount)));
+  const totalDiscount = Math.min(safeBase, safeSubscriber + safePromo);
+
+  return {
+    base: safeBase,
+    subscriberDiscount: safeSubscriber,
+    promoDiscount: safePromo,
+    discountApplied: totalDiscount,
+    final: Math.max(0, safeBase - totalDiscount),
+  };
+};
+
 export default function CourseManualPaymentPage() {
   const params = useParams<{ id: string }>();
   const courseId = params?.id;
   const { user, loading: authLoading } = useAuth();
 
   const [course, setCourse] = useState<CourseLite | null>(null);
-  const [pricing, setPricing] = useState<{ base: number; discount: number; final: number }>({
-    base: 0,
-    discount: 0,
-    final: 0,
-  });
+  const [pricing, setPricing] = useState<PricingState>(buildPricing(0, 0));
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [requestStatus, setRequestStatus] = useState<RequestStatus>(null);
@@ -46,6 +75,12 @@ export default function CourseManualPaymentPage() {
   const [transferAt, setTransferAt] = useState("");
   const [notes, setNotes] = useState("");
   const [file, setFile] = useState<File | null>(null);
+
+  const [promoCode, setPromoCode] = useState("");
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState("");
+  const [promoSuccess, setPromoSuccess] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
 
   useEffect(() => {
     setAmount(pricing.final.toString());
@@ -93,6 +128,7 @@ export default function CourseManualPaymentPage() {
             const end = data.currentPeriodEnd?.toMillis?.() ?? 0;
             return end >= now;
           })();
+
         const reqRef = doc(db, "course_purchase_requests", `${user.uid}_${courseId}`);
         const reqSnap = await getDoc(reqRef);
         if (reqSnap.exists()) {
@@ -106,9 +142,13 @@ export default function CourseManualPaymentPage() {
         }
 
         const base = Math.max(0, normalizedPrice);
-        const discount = active && base > 0 ? 5000 : 0;
-        const final = Math.max(0, base - discount);
-        setPricing({ base, discount, final });
+        const subscriberDiscount = active && base > 0 ? 5000 : 0;
+        setPricing(buildPricing(base, subscriberDiscount, 0));
+
+        setAppliedPromo(null);
+        setPromoCode("");
+        setPromoError("");
+        setPromoSuccess("");
       } finally {
         setLoading(false);
       }
@@ -118,9 +158,72 @@ export default function CourseManualPaymentPage() {
   }, [courseId, user]);
 
   const priceLabel = useMemo(() => {
-    if (pricing.final <= 0) return "Gratis (diskon langganan)";
+    if (pricing.final <= 0) return "Gratis";
     return `Rp ${pricing.final.toLocaleString("id-ID")}`;
   }, [pricing.final]);
+
+  const applyPromo = async () => {
+    const normalized = normalizeDiscountCode(promoCode);
+    const amountBeforePromo = Math.max(0, pricing.base - pricing.subscriberDiscount);
+
+    if (!normalized) {
+      setPromoError("Masukkan kode unik terlebih dahulu.");
+      setPromoSuccess("");
+      return;
+    }
+
+    if (amountBeforePromo <= 0) {
+      setPromoError("Nominal transaksi sudah Rp 0, kode unik tidak diperlukan.");
+      setPromoSuccess("");
+      return;
+    }
+
+    setPromoLoading(true);
+    setPromoError("");
+    setPromoSuccess("");
+
+    try {
+      const result = await validateDiscountCode({
+        code: normalized,
+        target: "course",
+        amount: amountBeforePromo,
+        courseId,
+      });
+
+      if (!result.ok) {
+        setAppliedPromo(null);
+        setPricing((prev) => buildPricing(prev.base, prev.subscriberDiscount, 0));
+        setPromoError(result.error);
+        return;
+      }
+
+      setPromoCode(result.code);
+      setAppliedPromo({
+        code: result.code,
+        title: result.title,
+        discountType: result.discountType,
+        discountValue: result.discountValue,
+        discountAmount: result.discountAmount,
+      });
+      setPricing((prev) => buildPricing(prev.base, prev.subscriberDiscount, result.discountAmount));
+
+      const discountLabel =
+        result.discountType === "percentage"
+          ? `${result.discountValue}%`
+          : `Rp ${result.discountValue.toLocaleString("id-ID")}`;
+      setPromoSuccess(`Kode ${result.code} aktif (${discountLabel}).`);
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  const clearPromo = () => {
+    setPromoCode("");
+    setAppliedPromo(null);
+    setPromoError("");
+    setPromoSuccess("");
+    setPricing((prev) => buildPricing(prev.base, prev.subscriberDiscount, 0));
+  };
 
   if (authLoading || loading) {
     return (
@@ -178,6 +281,11 @@ export default function CourseManualPaymentPage() {
       alert("Unggah bukti transfer terlebih dahulu.");
       return;
     }
+    if (promoCode.trim() && !appliedPromo) {
+      alert("Klik tombol Terapkan untuk memvalidasi kode unik sebelum kirim bukti.");
+      return;
+    }
+
     setSubmitted(false);
     try {
       const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, "_");
@@ -199,7 +307,13 @@ export default function CourseManualPaymentPage() {
           courseId,
           courseTitle: course.title,
           basePrice: pricing.base,
-          discountApplied: pricing.discount,
+          subscriberDiscountApplied: pricing.subscriberDiscount,
+          promoCode: appliedPromo?.code ?? null,
+          promoCodeTitle: appliedPromo?.title ?? null,
+          promoDiscountApplied: pricing.promoDiscount,
+          promoDiscountType: appliedPromo?.discountType ?? null,
+          promoDiscountValue: appliedPromo?.discountValue ?? null,
+          discountApplied: pricing.discountApplied,
           finalPrice: pricing.final,
           amount: pricing.final,
           bank,
@@ -237,16 +351,19 @@ export default function CourseManualPaymentPage() {
               Harga normal:{" "}
               <span className="font-semibold">Rp {pricing.base.toLocaleString("id-ID")}</span>
             </div>
-            {pricing.discount > 0 && (
+            {pricing.subscriberDiscount > 0 && (
               <div className="text-emerald-600">
-                Diskon subscriber: Rp 5.000 → {priceLabel}
+                Diskon subscriber: Rp {pricing.subscriberDiscount.toLocaleString("id-ID")}
               </div>
             )}
-            {pricing.discount <= 0 && (
-              <div>
-                Nominal yang perlu dibayar: <span className="font-semibold">{priceLabel}</span>
+            {pricing.promoDiscount > 0 && appliedPromo && (
+              <div className="text-emerald-600">
+                Diskon kode unik {appliedPromo.code}: Rp {pricing.promoDiscount.toLocaleString("id-ID")}
               </div>
             )}
+            <div>
+              Nominal yang perlu dibayar: <span className="font-semibold">{priceLabel}</span>
+            </div>
           </div>
           {requestStatus === "pending" && (
             <div className="mt-4 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
@@ -286,6 +403,48 @@ export default function CourseManualPaymentPage() {
 
         {!submitted ? (
           <form onSubmit={handleSubmit} className="space-y-4 rounded-md border p-4 bg-white dark:bg-neutral-900">
+            <div>
+              <label className="block text-sm mb-1">Kode Unik Diskon (opsional)</label>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  className="w-full border rounded px-3 py-2 uppercase"
+                  value={promoCode}
+                  onChange={(e) => {
+                    const value = normalizeDiscountCode(e.target.value);
+                    setPromoCode(value);
+                    setPromoError("");
+                    setPromoSuccess("");
+                    if (appliedPromo) {
+                      setAppliedPromo(null);
+                      setPricing((prev) => buildPricing(prev.base, prev.subscriberDiscount, 0));
+                    }
+                  }}
+                  placeholder="Contoh: HEMAT10"
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="inline-flex items-center rounded bg-neutral-800 text-white px-4 py-2 text-sm disabled:opacity-60"
+                    onClick={() => void applyPromo()}
+                    disabled={promoLoading || !promoCode.trim()}
+                  >
+                    {promoLoading ? "Memeriksa..." : "Terapkan"}
+                  </button>
+                  {appliedPromo && (
+                    <button
+                      type="button"
+                      className="inline-flex items-center rounded border px-4 py-2 text-sm"
+                      onClick={clearPromo}
+                    >
+                      Hapus
+                    </button>
+                  )}
+                </div>
+              </div>
+              {promoError && <p className="mt-2 text-xs text-rose-600">{promoError}</p>}
+              {promoSuccess && <p className="mt-2 text-xs text-emerald-600">{promoSuccess}</p>}
+            </div>
+
             <div>
               <label className="block text-sm mb-1">Nominal (Rp)</label>
               <input

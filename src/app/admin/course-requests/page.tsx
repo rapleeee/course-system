@@ -41,6 +41,12 @@ type CourseRequest = {
   courseId: string;
   courseTitle?: string;
   basePrice?: number;
+  subscriberDiscountApplied?: number;
+  promoCode?: string | null;
+  promoCodeTitle?: string | null;
+  promoDiscountApplied?: number;
+  promoDiscountType?: "fixed" | "percentage" | null;
+  promoDiscountValue?: number | null;
   discountApplied?: number;
   finalPrice?: number;
   proofUrl?: string;
@@ -297,9 +303,21 @@ export default function CourseRequestsAdminPage() {
                       <TableCell className="text-sm">
                         <div className="flex flex-col">
                           <span>{formatCurrency(item.basePrice)}</span>
-                          {item.discountApplied ? (
+                          {item.subscriberDiscountApplied ? (
                             <span className="text-[11px] text-muted-foreground">
                               Diskon subscriber: Rp{" "}
+                              {item.subscriberDiscountApplied.toLocaleString("id-ID")}
+                            </span>
+                          ) : null}
+                          {item.promoDiscountApplied && item.promoCode ? (
+                            <span className="text-[11px] text-muted-foreground">
+                              Kode {item.promoCode}: -Rp{" "}
+                              {item.promoDiscountApplied.toLocaleString("id-ID")}
+                            </span>
+                          ) : null}
+                          {item.discountApplied ? (
+                            <span className="text-[11px] text-muted-foreground">
+                              Total diskon: Rp{" "}
                               {item.discountApplied.toLocaleString("id-ID")}
                             </span>
                           ) : null}

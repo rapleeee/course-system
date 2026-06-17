@@ -135,7 +135,7 @@ const goToManual = () => {
       </div>
       <div className="mt-4 rounded-lg border p-4 bg-white dark:bg-neutral-900">
         <div className="text-sm text-neutral-700 dark:text-neutral-300">
-          Pembayaran hanya melalui transfer ke rekening yang disediakan. Kirim bukti, admin akan cek manual.
+          Pembayaran hanya melalui transfer ke rekening yang disediakan. Di form manual kamu bisa pakai kode unik diskon, lalu kirim bukti untuk dicek admin.
         </div>
         <div className="mt-2">
           <a href="/pages/subscription/manual" className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold shadow-sm transition bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700">
